@@ -1,0 +1,22 @@
+syntax = "proto3";
+package sanitize;
+
+option go_package = "github.com/intrinsec/protoc-gen-sanitize/sanitize";
+
+import "google/protobuf/descriptor.proto";
+
+enum Sanitization {
+    NONE = 0;
+    TEXT = 1;
+    HTML = 2;
+}
+
+// Message options for sql generation
+extend google.protobuf.MessageOptions {
+    optional bool disabled = 2081;
+}
+
+// Field options
+extend google.protobuf.FieldOptions {
+    optional Sanitization kind = 2181;
+}

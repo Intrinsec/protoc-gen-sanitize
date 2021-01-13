@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package asset;
+
+import "sanitize/sanitize.proto";
+
+option go_package = "intrinsec.com/test/test/pkg/model;model";
+
+message Asset1 {
+
+    string name = 1 [
+        (sanitize.kind) = TEXT
+    ];
+
+    int64 value = 2;
+
+    string text = 3 [
+        (sanitize.kind) = HTML
+    ];
+
+    string uuid = 4;
+}
+
+
+message Asset2 {
+
+    string name = 1 [
+        (sanitize.kind) = TEXT
+    ];
+
+    int64 value = 2;
+
+    string uuid = 3;
+}
+
+message Asset3 {
+
+    int64 value = 2;
+
+    string text = 3 [
+        (sanitize.kind) = HTML
+    ];
+
+    string uuid = 4;
+}
+
+message Asset4 {
+
+    int64 value = 2;
+
+    string uuid = 4;
+}

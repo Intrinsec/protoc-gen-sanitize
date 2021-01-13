@@ -1,0 +1,4 @@
+bin/
+*.sanitize
+*.pb.go
+*.pb.sanitize.go
