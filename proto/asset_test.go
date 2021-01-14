@@ -25,6 +25,11 @@ func TestAsset1_Sanitize(t *testing.T) {
 			init: fields{"<b>name</b>", "<iframe>text</iframe>", "deadbeef"},
 			want: fields{"name", "", "deadbeef"},
 		},
+		{
+			name: "test02",
+			init: fields{"<b>name</b>", "<pre>pre<iframe>text</iframe>post</pre>", "deadbeef"},
+			want: fields{"name", "<pre>prepost</pre>", "deadbeef"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
