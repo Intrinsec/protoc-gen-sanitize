@@ -13,7 +13,7 @@ enum Sanitization {
 
 // Message options for sql generation
 extend google.protobuf.MessageOptions {
-    optional bool disabled = 2081;
+    optional bool disabled = 2181;
 }
 
 // Field options
