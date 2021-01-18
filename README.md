@@ -8,4 +8,4 @@ See `./proto/asset.proto` for example on how to use it.
 
 ## Tests
 
-Do a `make test` to test and view an code generated example.
+Do a `make test` to test and view a code generated example.
