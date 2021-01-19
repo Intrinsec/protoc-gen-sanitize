@@ -1,4 +1,4 @@
 bin/
 *.sanitize
-*.pb.go
-*.pb.sanitize.go
+tests/*.pb.go
+tests/*.pb.sanitize.go
