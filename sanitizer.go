@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -11,7 +11,7 @@ import (
 	pgsgo "github.com/lyft/protoc-gen-star/lang/go"
 )
 
-// SanitizePlugin adds Sanitize methods on PB
+// SanitizeModule adds Sanitize methods on PB
 type SanitizeModule struct {
 	*pgs.ModuleBase
 	ctx pgsgo.Context
@@ -21,49 +21,62 @@ type SanitizeModule struct {
 // Sanitize returns an initialized SanitizePlugin
 func Sanitize() *SanitizeModule { return &SanitizeModule{ModuleBase: &pgs.ModuleBase{}} }
 
+// InitContext populates the module with needed context and fields
 func (p *SanitizeModule) InitContext(c pgs.BuildContext) {
-
-	log.Println("InitContext")
+	c.Log("InitContext")
 	p.ModuleBase.InitContext(c)
 	p.ctx = pgsgo.InitContext(c.Parameters())
 
 	tpl := template.New("Sanitize").Funcs(map[string]interface{}{
-		"package":     p.ctx.PackageName,
-		"name":        p.ctx.Name,
-		"sanitizer":   p.sanitizer,
-		"initializer": p.initializer,
+		"package":          p.ctx.PackageName,
+		"name":             p.ctx.Name,
+		"sanitizer":        p.sanitizer,
+		"initializer":      p.initializer,
+		"leadingCommenter": p.leadingCommenter,
 	})
 
-	p.tpl = template.Must(tpl.Parse(SanitizeTpl))
+	p.tpl = template.Must(tpl.Parse(sanitizeTpl))
 }
 
 // Name satisfies the generator.Plugin interface.
 func (p *SanitizeModule) Name() string { return "Sanitize" }
 
+// Execute generates validation code for messages
 func (p *SanitizeModule) Execute(targets map[string]pgs.File, pkgs map[string]pgs.Package) []pgs.Artifact {
-
-	log.Println("Execute")
+	p.Debug("Execute")
 
 	for _, t := range targets {
-		p.generate(t)
+		p.generateFile(t)
 	}
 
 	return p.Artifacts()
 }
 
-func (p *SanitizeModule) generate(f pgs.File) {
-
-	log.Println("generate")
-
+func (p *SanitizeModule) generateFile(f pgs.File) {
 	if len(f.Messages()) == 0 {
 		return
 	}
 
 	name := p.ctx.OutputPath(f).SetExt(".sanitize.go")
 
-	log.Println(name)
+	p.Debug("generate:", name)
 
 	p.AddGeneratorTemplateFile(name.String(), p.tpl, f)
+}
+
+func (p *SanitizeModule) leadingCommenter(f pgs.File) string {
+	p.Debug("Comments:", f.SourceCodeInfo().LeadingDetachedComments())
+
+	var comments []string
+	re := regexp.MustCompile("(\r?\n)+")
+
+	for _, comment := range f.SourceCodeInfo().LeadingDetachedComments() {
+		tmpCmt := re.Split(comment, -1)
+		comments = append(comments, tmpCmt[:len(tmpCmt)-1]...)
+	}
+
+	return "//" + strings.Join(comments, "\n//")
+
 }
 
 func (p *SanitizeModule) initializer(m pgs.Message) string {
@@ -97,7 +110,6 @@ func (p *SanitizeModule) initializer(m pgs.Message) string {
 }
 
 func (p *SanitizeModule) sanitizer(f pgs.Field) string {
-
 	if f.Type().ProtoType() == pgs.StringT {
 		var kind sanitize.Sanitization
 
@@ -118,7 +130,9 @@ func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 	return ""
 }
 
-const SanitizeTpl = `package {{ package . }}
+const sanitizeTpl = `{{ leadingCommenter . }}
+
+package {{ package . }}
 import (
 	"github.com/microcosm-cc/bluemonday"
 )

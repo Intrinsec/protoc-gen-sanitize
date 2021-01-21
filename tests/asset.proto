@@ -1,3 +1,8 @@
+// Copyright Example 2021
+
+// Leading Comment
+// leading comment block
+
 syntax = "proto3";
 
 package asset;
