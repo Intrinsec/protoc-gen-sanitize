@@ -35,8 +35,8 @@ bin/protoc-gen-$(NAME): $(NAME)/$(NAME).pb.go $(wildcard *.go)
 
 .PHONY: test
 test: build
-	@protoc -I . --plugin=protoc-gen-go=$(shell pwd)/bin/protoc-gen-go --go_opt=paths=source_relative --go_out="." tests/asset.proto
-	@protoc -I . --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_opt=paths=source_relative --$(NAME)_out="." tests/asset.proto
+	@protoc -I . --plugin=protoc-gen-go=$(shell pwd)/bin/protoc-gen-go --go_out="." tests/proto/*.proto
+	@protoc -I . --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_out=tests tests/proto/*.proto
 	@cat tests/asset.pb.$(NAME).go
 	@cd tests && go test -v .
 

@@ -5,11 +5,11 @@
 
 syntax = "proto3";
 
-package asset;
+package test;
 
 import "sanitize/sanitize.proto";
 
-option go_package = "intrinsec.com/test/test/pkg/model;model";
+option go_package = "test";
 
 message Asset1 {
 
