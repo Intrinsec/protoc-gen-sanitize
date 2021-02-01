@@ -56,12 +56,15 @@ func (p *SanitizeModule) generateFile(f pgs.File) {
 	if len(f.Messages()) == 0 {
 		return
 	}
+	p.Push(f.Name().String())
+	defer p.Pop()
+	p.Debug("Comments:", f.InputPath())
 
-	name := p.ctx.OutputPath(f).SetExt(".sanitize.go")
+	name := f.InputPath().BaseName() + ".pb.sanitize.go"
 
 	p.Debug("generate:", name)
 
-	p.AddGeneratorTemplateFile(name.String(), p.tpl, f)
+	p.AddGeneratorTemplateFile(name, p.tpl, f)
 }
 
 func (p *SanitizeModule) leadingCommenter(f pgs.File) string {
