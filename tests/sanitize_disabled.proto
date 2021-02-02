@@ -1,0 +1,23 @@
+// Copyright Example 2021
+
+syntax = "proto3";
+
+package octlantis.cpod.api_v1;
+
+import "sanitize/sanitize.proto";
+
+option go_package = "test";
+
+
+option (sanitize.disable_file) = true;
+
+message Tag {
+    string uuid = 1;
+
+    string name = 2;
+
+    uint32 color = 3;
+
+    string description = 4;
+}
+

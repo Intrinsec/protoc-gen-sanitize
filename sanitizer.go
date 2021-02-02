@@ -46,10 +46,42 @@ func (p *SanitizeModule) Execute(targets map[string]pgs.File, pkgs map[string]pg
 	p.Debug("Execute")
 
 	for _, t := range targets {
+		if p.doNotSanitize(t) {
+			continue
+		}
 		p.generateFile(t)
 	}
 
 	return p.Artifacts()
+}
+
+func (p *SanitizeModule) doNotSanitize(f pgs.File) bool {
+	var disableFile bool
+
+	if ok, err := f.Extension(sanitize.E_DisableFile, &disableFile); ok && err == nil && disableFile {
+		p.Debug("Skipping:", f.InputPath())
+		return true
+	}
+
+	for _, m := range f.AllMessages() {
+		var disableMessage bool
+		if ok, err := m.Extension(sanitize.E_DisableMessage, &disableMessage); ok && err == nil && disableMessage {
+			p.Debug("Skipping:", m.Name())
+			continue
+		}
+
+		for _, field := range m.Fields() {
+			var kind sanitize.Sanitization
+			if ok, err := field.Extension(sanitize.E_Kind, &kind); ok && err == nil {
+				return false
+			}
+		}
+
+	}
+
+	p.Debug("No sanitization options encountered for:", f.InputPath())
+	// It means no sanitize option was encountered so no sanitization file should be generated
+	return true
 }
 
 func (p *SanitizeModule) generateFile(f pgs.File) {

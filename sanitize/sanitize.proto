@@ -11,12 +11,15 @@ enum Sanitization {
     HTML = 2;
 }
 
-// Message options for sql generation
-extend google.protobuf.MessageOptions {
-    optional bool disabled = 2181;
+extend google.protobuf.FileOptions {
+    optional bool disable_file = 2181;
 }
 
-// Field options
+extend google.protobuf.MessageOptions {
+    optional bool disable_message = 2181;
+}
+
 extend google.protobuf.FieldOptions {
     optional Sanitization kind = 2181;
 }
+

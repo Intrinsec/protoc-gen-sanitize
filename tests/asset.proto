@@ -51,6 +51,8 @@ message Asset3 {
 
 message Asset4 {
 
+    option (sanitize.disable_message) = true;
+
     int64 value = 2;
 
     string uuid = 4;

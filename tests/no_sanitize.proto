@@ -2,11 +2,9 @@ syntax = "proto3";
 
 package test;
 
-import "sanitize/sanitize.proto";
-
 option go_package = "test";
 
-message TagsAsset {
+message NoSanitize {
 
     int64 asset_uuid = 1;
     int64 tag_uuid = 2;
