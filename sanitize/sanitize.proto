@@ -12,14 +12,14 @@ enum Sanitization {
 }
 
 extend google.protobuf.FileOptions {
-    optional bool disable_file = 2181;
+    optional bool disable_file = 1102;
 }
 
 extend google.protobuf.MessageOptions {
-    optional bool disable_message = 2181;
+    optional bool disable_message = 1102;
 }
 
 extend google.protobuf.FieldOptions {
-    optional Sanitization kind = 2181;
+    optional Sanitization kind = 1102;
 }
 
