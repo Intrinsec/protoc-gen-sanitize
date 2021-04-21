@@ -20,6 +20,10 @@ extend google.protobuf.MessageOptions {
 }
 
 extend google.protobuf.FieldOptions {
+    optional bool disable_field = 1103;
+}
+
+extend google.protobuf.FieldOptions {
     optional Sanitization kind = 1102;
 }
 

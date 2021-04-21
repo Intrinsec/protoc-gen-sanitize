@@ -1,53 +1,89 @@
 package test
 
 import (
+	"reflect"
 	"testing"
 )
 
-func TestAsset1_Sanitize(t *testing.T) {
-	type fields struct {
-		Name string
-		Text string
-		Uuid string
-	}
+type Sanitizable interface {
+	Sanitize() error
+}
+
+func TestSanitizable_Sanitize(t *testing.T) {
 	tests := []struct {
 		name string
-		init fields
-		want fields
+		obj  Sanitizable
+		want Sanitizable
 	}{
 		{
-			name: "test00",
-			init: fields{"<b>name</b>", "<p>text</p>", "deadbeef"},
-			want: fields{"name", "<p>text</p>", "deadbeef"},
+			name: "Test kind TEXT",
+			obj: &Asset1{
+				Name: "<b>name</b>",
+				Text: "<p>text</p>",
+				Uuid: "deadbeef",
+			},
+			want: &Asset1{
+				Name: "name",
+				Text: "<p>text</p>",
+				Uuid: "deadbeef",
+			},
 		},
 		{
-			name: "test01",
-			init: fields{"<b>name</b>", "<iframe>text</iframe>", "deadbeef"},
-			want: fields{"name", "", "deadbeef"},
+			name: "Test kind TEXT and HTML",
+			obj: &Asset1{
+				Name: "<b>name</b>",
+				Text: "<iframe>text</iframe>",
+				Uuid: "deadbeef",
+			},
+			want: &Asset1{
+				Name: "name",
+				Text: "",
+				Uuid: "deadbeef",
+			},
 		},
 		{
-			name: "test02",
-			init: fields{"<b>name</b>", "<pre>pre<iframe>text</iframe>post</pre>", "deadbeef"},
-			want: fields{"name", "<pre>prepost</pre>", "deadbeef"},
+			name: "Test kind TEXT and nested HTML",
+			obj: &Asset1{
+				Name: "<b>name</b>",
+				Text: "<pre>pre<iframe>text</iframe>post</pre>",
+				Uuid: "deadbeef",
+			},
+			want: &Asset1{
+				Name: "name",
+				Text: "<pre>prepost</pre>",
+				Uuid: "deadbeef",
+			},
+		},
+		{
+			name: "Test sanitize subfield and not disable_field",
+			obj: &Asset5{
+				Asset1: &Asset1{
+					Name: "<b>name</b>",
+					Text: "<pre>pre<iframe>text</iframe>post</pre>",
+					Uuid: "deadbeef",
+				},
+				Asset2: &Asset2{
+					Name: "<b>name</b>",
+				},
+			},
+			want: &Asset5{
+				Asset1: &Asset1{
+					Name: "name",
+					Text: "<pre>prepost</pre>",
+					Uuid: "deadbeef",
+				},
+				Asset2: &Asset2{
+					Name: "<b>name</b>",
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &Asset1{
-				Name: tt.init.Name,
-				Text: tt.init.Text,
-				Uuid: tt.init.Uuid,
-			}
-			m.Sanitize()
+			tt.obj.Sanitize()
 
-			if m.Name != tt.want.Name {
-				t.Errorf("Asset1.Sanitize() Name = `%v`, wanted `%v`", m.Name, tt.want.Name)
-			}
-			if m.Text != tt.want.Text {
-				t.Errorf("Asset1.Sanitize() Text = `%v`, wanted `%v`", m.Text, tt.want.Text)
-			}
-			if m.Uuid != tt.want.Uuid {
-				t.Errorf("Asset1.Sanitize() Uuid = `%v`, wanted `%v`", m.Uuid, tt.want.Uuid)
+			if !reflect.DeepEqual(tt.obj, tt.want) {
+				t.Errorf("Sanitize() got: `%+v`, wanted: `%+v`", tt.obj, tt.want)
 			}
 		})
 	}

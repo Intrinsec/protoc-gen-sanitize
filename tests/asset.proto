@@ -57,3 +57,13 @@ message Asset4 {
 
     string uuid = 4;
 }
+
+message Asset5 {
+
+    Asset1 asset1 = 2;
+
+    Asset2 asset2 = 4 [
+        (sanitize.disable_field) = true
+    ];
+
+}

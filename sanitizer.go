@@ -59,14 +59,14 @@ func (p *SanitizeModule) doNotSanitize(f pgs.File) bool {
 	var disableFile bool
 
 	if ok, err := f.Extension(sanitize.E_DisableFile, &disableFile); ok && err == nil && disableFile {
-		p.Debug("Skipping:", f.InputPath())
+		p.Debug("Skipping: ", f.InputPath())
 		return true
 	}
 
 	for _, m := range f.AllMessages() {
 		var disableMessage bool
 		if ok, err := m.Extension(sanitize.E_DisableMessage, &disableMessage); ok && err == nil && disableMessage {
-			p.Debug("Skipping:", m.Name())
+			p.Debug("Skipping: ", m.Name())
 			continue
 		}
 
@@ -79,7 +79,7 @@ func (p *SanitizeModule) doNotSanitize(f pgs.File) bool {
 
 	}
 
-	p.Debug("No sanitization options encountered for:", f.InputPath())
+	p.Debug("No sanitization options encountered for: ", f.InputPath())
 	// It means no sanitize option was encountered so no sanitization file should be generated
 	return true
 }
@@ -145,10 +145,10 @@ func (p *SanitizeModule) initializer(m pgs.Message) string {
 }
 
 func (p *SanitizeModule) sanitizer(f pgs.Field) string {
-	if f.Type().ProtoType() == pgs.StringT {
+	name := p.ctx.Name(f)
+	switch f.Type().ProtoType() {
+	case pgs.StringT:
 		var kind sanitize.Sanitization
-
-		name := p.ctx.Name(f)
 
 		if ok, err := f.Extension(sanitize.E_Kind, &kind); ok && err == nil {
 			switch kind {
@@ -160,8 +160,15 @@ func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 				return fmt.Sprintf("m.%s = textSanitize.Sanitize(m.%s)", name, name)
 			}
 		}
-	}
+	case pgs.MessageT:
+		var disableField bool
 
+		if ok, err := f.Extension(sanitize.E_DisableField, &disableField); ok && err == nil && disableField {
+			p.Debug("Skipping field:", name)
+			return ""
+		}
+		return fmt.Sprintf("m.%s.Sanitize()", name)
+	}
 	return ""
 }
 
