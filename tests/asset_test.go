@@ -17,12 +17,12 @@ func TestSanitizable_Sanitize(t *testing.T) {
 	}{
 		{
 			name: "Test kind TEXT",
-			obj: &Asset1{
+			obj: &Asset{
 				Name: "<b>name</b>",
 				Text: "<p>text</p>",
 				Uuid: "deadbeef",
 			},
-			want: &Asset1{
+			want: &Asset{
 				Name: "name",
 				Text: "<p>text</p>",
 				Uuid: "deadbeef",
@@ -30,12 +30,12 @@ func TestSanitizable_Sanitize(t *testing.T) {
 		},
 		{
 			name: "Test kind TEXT and HTML",
-			obj: &Asset1{
+			obj: &Asset{
 				Name: "<b>name</b>",
 				Text: "<iframe>text</iframe>",
 				Uuid: "deadbeef",
 			},
-			want: &Asset1{
+			want: &Asset{
 				Name: "name",
 				Text: "",
 				Uuid: "deadbeef",
@@ -43,12 +43,12 @@ func TestSanitizable_Sanitize(t *testing.T) {
 		},
 		{
 			name: "Test kind TEXT and nested HTML",
-			obj: &Asset1{
+			obj: &Asset{
 				Name: "<b>name</b>",
 				Text: "<pre>pre<iframe>text</iframe>post</pre>",
 				Uuid: "deadbeef",
 			},
-			want: &Asset1{
+			want: &Asset{
 				Name: "name",
 				Text: "<pre>prepost</pre>",
 				Uuid: "deadbeef",
@@ -57,7 +57,7 @@ func TestSanitizable_Sanitize(t *testing.T) {
 		{
 			name: "Test sanitize subfield and not disable_field",
 			obj: &Asset5{
-				Asset1: &Asset1{
+				Asset: &Asset{
 					Name: "<b>name</b>",
 					Text: "<pre>pre<iframe>text</iframe>post</pre>",
 					Uuid: "deadbeef",
@@ -67,7 +67,7 @@ func TestSanitizable_Sanitize(t *testing.T) {
 				},
 			},
 			want: &Asset5{
-				Asset1: &Asset1{
+				Asset: &Asset{
 					Name: "name",
 					Text: "<pre>prepost</pre>",
 					Uuid: "deadbeef",
@@ -75,6 +75,44 @@ func TestSanitizable_Sanitize(t *testing.T) {
 				Asset2: &Asset2{
 					Name: "<b>name</b>",
 				},
+			},
+		},
+		{
+			name: "Test sanitize repeated message",
+			obj: &Asset6{
+				Assets: []*Asset{&Asset{
+					Name: "<b>name</b>",
+					Text: "<pre>pre<iframe>text</iframe>post</pre>",
+					Uuid: "deadbeef",
+				},
+				},
+				Asset2: &Asset2{
+					Name: "<b>name</b>",
+				},
+			},
+			want: &Asset6{
+				Assets: []*Asset{&Asset{
+					Name: "name",
+					Text: "<pre>prepost</pre>",
+					Uuid: "deadbeef",
+				},
+				},
+				Asset2: &Asset2{
+					Name: "<b>name</b>",
+				},
+			},
+		},
+		{
+			name: "Test sanitize repeated string",
+			obj: &Asset2{
+				Name: "<b>name</b>",
+				Value: 123,
+				Uuids: []string{"<b>uuid1</b>", "<b>uuid2</b>"},
+			},
+			want: &Asset2{
+				Name: "name",
+				Value: 123,
+				Uuids: []string{"uuid1", "uuid2"},
 			},
 		},
 	}

@@ -11,7 +11,7 @@ import "sanitize/sanitize.proto";
 
 option go_package = "test";
 
-message Asset1 {
+message Asset {
 
     string name = 1 [
         (sanitize.kind) = TEXT
@@ -35,7 +35,9 @@ message Asset2 {
 
     int64 value = 2;
 
-    string uuid = 3;
+    repeated string uuids = 3[
+        (sanitize.kind) = TEXT
+    ];
 }
 
 message Asset3 {
@@ -60,7 +62,17 @@ message Asset4 {
 
 message Asset5 {
 
-    Asset1 asset1 = 2;
+    Asset asset = 2;
+
+    Asset2 asset2 = 4 [
+        (sanitize.disable_field) = true
+    ];
+
+}
+
+message Asset6 {
+
+    repeated Asset assets = 2;
 
     Asset2 asset2 = 4 [
         (sanitize.disable_field) = true

@@ -14,15 +14,15 @@ import (
 // SanitizeModule adds Sanitize methods on PB
 type SanitizeModule struct {
 	*pgs.ModuleBase
-	ctx  pgsgo.Context
-	tpl  *template.Template
+	ctx              pgsgo.Context
+	tpl              *template.Template
 	importBluemonday map[pgs.File]bool
 }
 
 // Sanitize returns an initialized SanitizePlugin
 func Sanitize() *SanitizeModule {
 	return &SanitizeModule{
-		ModuleBase: &pgs.ModuleBase{},
+		ModuleBase:       &pgs.ModuleBase{},
 		importBluemonday: make(map[pgs.File]bool),
 	}
 }
@@ -34,11 +34,11 @@ func (p *SanitizeModule) InitContext(c pgs.BuildContext) {
 	p.ctx = pgsgo.InitContext(c.Parameters())
 
 	tpl := template.New("Sanitize").Funcs(map[string]interface{}{
-		"package":          p.ctx.PackageName,
-		"name":             p.ctx.Name,
-		"sanitizer":        p.sanitizer,
-		"initializer":      p.initializer,
-		"leadingCommenter": p.leadingCommenter,
+		"package":            p.ctx.PackageName,
+		"name":               p.ctx.Name,
+		"sanitizer":          p.sanitizer,
+		"initializer":        p.initializer,
+		"leadingCommenter":   p.leadingCommenter,
 		"doImportBluemonday": p.doImportBluemonday,
 	})
 
@@ -163,8 +163,56 @@ func (p *SanitizeModule) initializer(m pgs.Message) string {
 	return strings.Join(out, "\n	")
 }
 
+func (p *SanitizeModule) buildSanitizeCall(f pgs.Field, name string, sanitizeKind string) string {
+	prefix := ""
+	suffix := ""
+	indent := ""
+	sanitizeCall := ""
+	iter := "i"
+	elementName := name
+
+	if f.Type().IsRepeated() {
+		p.Debug("Repeated:", name)
+		indent = "	"
+		suffix = "\n}"
+		elementName = strings.ToLower(string(name[0]))
+		if sanitizeKind == "" {
+			iter = "_"
+		}
+		prefix = fmt.Sprintf("for %s, %s := range m.%s {\n",
+			iter,
+			elementName,
+			name,
+		)
+	}
+	var format string
+	if sanitizeKind == "" {
+		// building call for message
+		if f.Type().IsRepeated() {
+			format = "%s.Sanitize()"
+		} else {
+			format = "m.%s.Sanitize()"
+		}
+		sanitizeCall = fmt.Sprintf(format, elementName)
+	} else {
+		// building call for string
+		if f.Type().IsRepeated() {
+			format = "m.%s[i] = %sSanitize.Sanitize(%s)"
+		} else {
+			format = "m.%s = %sSanitize.Sanitize(m.%s)"
+		}
+		sanitizeCall = fmt.Sprintf(format, name, strings.ToLower(sanitizeKind), elementName)
+	}
+	return fmt.Sprintf("%s%s%s%s", prefix, indent, sanitizeCall, suffix)
+}
+
 func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 	name := p.ctx.Name(f)
+
+	if f.Type().IsRepeated() {
+		p.Debug("Repeated:", name)
+	}
+
 	switch f.Type().ProtoType() {
 	case pgs.StringT:
 		var kind sanitize.Sanitization
@@ -174,9 +222,9 @@ func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 			case sanitize.Sanitization_NONE:
 				return ""
 			case sanitize.Sanitization_HTML:
-				return fmt.Sprintf("m.%s = htmlSanitize.Sanitize(m.%s)", name, name)
+				return p.buildSanitizeCall(f, string(name), "html")
 			case sanitize.Sanitization_TEXT:
-				return fmt.Sprintf("m.%s = textSanitize.Sanitize(m.%s)", name, name)
+				return p.buildSanitizeCall(f, string(name), "text")
 			}
 		}
 	case pgs.MessageT:
@@ -186,7 +234,7 @@ func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 			p.Debug("Skipping field:", name)
 			return ""
 		}
-		return fmt.Sprintf("m.%s.Sanitize()", name)
+		return p.buildSanitizeCall(f, string(name), "")
 	}
 	return ""
 }
