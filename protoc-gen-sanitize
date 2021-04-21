@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Script to launch dlv
+
+dlv --listen=:2345 --headless=true --accept-multiclient --api-version=2 debug -- $@
