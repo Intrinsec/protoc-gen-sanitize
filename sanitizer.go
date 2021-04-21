@@ -14,12 +14,18 @@ import (
 // SanitizeModule adds Sanitize methods on PB
 type SanitizeModule struct {
 	*pgs.ModuleBase
-	ctx pgsgo.Context
-	tpl *template.Template
+	ctx  pgsgo.Context
+	tpl  *template.Template
+	importBluemonday map[pgs.File]bool
 }
 
 // Sanitize returns an initialized SanitizePlugin
-func Sanitize() *SanitizeModule { return &SanitizeModule{ModuleBase: &pgs.ModuleBase{}} }
+func Sanitize() *SanitizeModule {
+	return &SanitizeModule{
+		ModuleBase: &pgs.ModuleBase{},
+		importBluemonday: make(map[pgs.File]bool),
+	}
+}
 
 // InitContext populates the module with needed context and fields
 func (p *SanitizeModule) InitContext(c pgs.BuildContext) {
@@ -33,6 +39,7 @@ func (p *SanitizeModule) InitContext(c pgs.BuildContext) {
 		"sanitizer":        p.sanitizer,
 		"initializer":      p.initializer,
 		"leadingCommenter": p.leadingCommenter,
+		"doImportBluemonday": p.doImportBluemonday,
 	})
 
 	p.tpl = template.Must(tpl.Parse(sanitizeTpl))
@@ -46,7 +53,7 @@ func (p *SanitizeModule) Execute(targets map[string]pgs.File, pkgs map[string]pg
 	p.Debug("Execute")
 
 	for _, t := range targets {
-		if p.doNotSanitize(t) {
+		if !p.doSanitize(t) {
 			continue
 		}
 		p.generateFile(t)
@@ -55,12 +62,14 @@ func (p *SanitizeModule) Execute(targets map[string]pgs.File, pkgs map[string]pg
 	return p.Artifacts()
 }
 
-func (p *SanitizeModule) doNotSanitize(f pgs.File) bool {
+func (p *SanitizeModule) doSanitize(f pgs.File) bool {
 	var disableFile bool
+
+	p.importBluemonday[f] = false
 
 	if ok, err := f.Extension(sanitize.E_DisableFile, &disableFile); ok && err == nil && disableFile {
 		p.Debug("Skipping: ", f.InputPath())
-		return true
+		return false
 	}
 
 	for _, m := range f.AllMessages() {
@@ -73,15 +82,25 @@ func (p *SanitizeModule) doNotSanitize(f pgs.File) bool {
 		for _, field := range m.Fields() {
 			var kind sanitize.Sanitization
 			if ok, err := field.Extension(sanitize.E_Kind, &kind); ok && err == nil {
-				return false
+				// Only case were we will use bluemonday in the generated code
+				p.importBluemonday[f] = true
+				return true
 			}
 		}
-
 	}
 
 	p.Debug("No sanitization options encountered for: ", f.InputPath())
-	// It means no sanitize option was encountered so no sanitization file should be generated
+	// Nonetheless we generate sanitization function to enable calling sanitization function of nested messages
 	return true
+}
+
+func (p *SanitizeModule) doImportBluemonday(f pgs.File) bool {
+	p.Debug("doImportBluemonday")
+	if value, ok := p.importBluemonday[f]; ok {
+		p.Debug(value)
+		return value
+	}
+	return false
 }
 
 func (p *SanitizeModule) generateFile(f pgs.File) {
@@ -175,9 +194,11 @@ func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 const sanitizeTpl = `{{ leadingCommenter . }}
 
 package {{ package . }}
+{{ if doImportBluemonday . }}
 import (
 	"github.com/microcosm-cc/bluemonday"
 )
+{{ end }}
 
 {{ range .AllMessages }}
 func (m *{{ name . }}) Sanitize() error {

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package test;
+
+import "tests/asset.proto";
+
+option go_package = "test";
+
+message SanitizeNested {
+    Asset1 asset = 1;
+}
