@@ -129,8 +129,10 @@ func (p *SanitizeModule) leadingCommenter(f pgs.File) string {
 		comments = append(comments, tmpCmt[:len(tmpCmt)-1]...)
 	}
 
-	return "//" + strings.Join(comments, "\n//")
-
+	if len(comments) > 0 {
+		return "//" + strings.Join(comments, "\n//")
+	}
+	return ""
 }
 
 func (p *SanitizeModule) initializer(m pgs.Message) string {
