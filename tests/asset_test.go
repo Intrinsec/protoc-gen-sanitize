@@ -6,7 +6,7 @@ import (
 )
 
 type Sanitizable interface {
-	Sanitize() error
+	Sanitize()
 }
 
 func TestSanitizable_Sanitize(t *testing.T) {

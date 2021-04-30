@@ -249,13 +249,12 @@ import (
 {{ end }}
 
 {{ range .AllMessages }}
-func (m *{{ name . }}) Sanitize() error {
+func (m *{{ name . }}) Sanitize() {
 	{{ initializer . }}
 
 {{ range .Fields }}
     {{ sanitizer . }}
 {{ end }}
-    return nil
 }
 
 {{ end }}
