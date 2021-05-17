@@ -250,6 +250,10 @@ import (
 
 {{ range .AllMessages }}
 func (m *{{ name . }}) Sanitize() {
+	if m == nil {
+		return
+	}
+
 	{{ initializer . }}
 
 {{ range .Fields }}
