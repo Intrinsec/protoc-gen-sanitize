@@ -11,7 +11,7 @@ import "sanitize/sanitize.proto";
 
 option go_package = "test";
 
-message Asset {
+message Entity1 {
 
     string name = 1 [
         (sanitize.kind) = TEXT
@@ -27,7 +27,7 @@ message Asset {
 }
 
 
-message Asset2 {
+message Entity2 {
 
     string name = 1 [
         (sanitize.kind) = TEXT
@@ -40,7 +40,7 @@ message Asset2 {
     ];
 }
 
-message Asset3 {
+message Entity3 {
 
     int64 value = 2;
 
@@ -51,7 +51,7 @@ message Asset3 {
     string uuid = 4;
 }
 
-message Asset4 {
+message Entity4 {
 
     option (sanitize.disable_message) = true;
 
@@ -60,22 +60,30 @@ message Asset4 {
     string uuid = 4;
 }
 
-message Asset5 {
+message Entity5 {
 
-    Asset asset = 2;
+    Entity1 entity = 2;
 
-    Asset2 asset2 = 4 [
+    Entity2 entity2 = 4 [
         (sanitize.disable_field) = true
     ];
 
 }
 
-message Asset6 {
+message Entity6 {
 
-    repeated Asset assets = 2;
+    repeated Entity1 entitys = 2;
 
-    Asset2 asset2 = 4 [
+    Entity2 entity2 = 4 [
         (sanitize.disable_field) = true
     ];
+
+}
+
+message Entity7 {
+
+    Entity1 entity1 = 1;
+
+    Entity2 entity2 = 2;
 
 }
