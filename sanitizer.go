@@ -15,36 +15,35 @@ import (
 // SanitizeModule adds Sanitize methods on PB
 type SanitizeModule struct {
 	*pgs.ModuleBase
-	ctx                 pgsgo.Context
-	tpl                 *template.Template
-	importBluemonday    map[pgs.File]bool
-	enforce             bool
-	missingSanitization []string
+	ctx              pgsgo.Context
+	tpl              *template.Template
+	importBluemonday map[pgs.File]bool
+	enforce          bool
+	hasMissing       bool
 }
 
 // Sanitize returns an initialized SanitizePlugin
 func Sanitize() *SanitizeModule {
 	return &SanitizeModule{
-		ModuleBase:          &pgs.ModuleBase{},
-		importBluemonday:    make(map[pgs.File]bool),
-		missingSanitization: make([]string, 0),
+		ModuleBase:       &pgs.ModuleBase{},
+		importBluemonday: make(map[pgs.File]bool),
+		hasMissing:       false,
 	}
 }
 
 // InitContext populates the module with needed context and fields
 func (p *SanitizeModule) InitContext(c pgs.BuildContext) {
-	c.Log("InitContext")
+	c.Debug("InitContext")
 	p.ModuleBase.InitContext(c)
 	p.ctx = pgsgo.InitContext(c.Parameters())
 
 	tpl := template.New("Sanitize").Funcs(map[string]interface{}{
-		"package":                  p.ctx.PackageName,
-		"name":                     p.ctx.Name,
-		"sanitizer":                p.sanitizer,
-		"initializer":              p.initializer,
-		"leadingCommenter":         p.leadingCommenter,
-		"doImportBluemonday":       p.doImportBluemonday,
-		"checkMissingSanitization": p.checkMissingSanitization,
+		"package":            p.ctx.PackageName,
+		"name":               p.ctx.Name,
+		"sanitizer":          p.sanitizer,
+		"initializer":        p.initializer,
+		"leadingCommenter":   p.leadingCommenter,
+		"doImportBluemonday": p.doImportBluemonday,
 	})
 
 	p.tpl = template.Must(tpl.Parse(sanitizeTpl))
@@ -69,6 +68,14 @@ func (p *SanitizeModule) Execute(targets map[string]pgs.File, pkgs map[string]pg
 	}
 
 	return p.Artifacts()
+}
+
+func (p *SanitizeModule) ExitCheck() {
+
+	if p.hasMissing && p.enforce {
+		p.Log("Sanitization is enforced. Add an option or explicitely disable the sanitization on the above fields")
+		os.Exit(1)
+	}
 }
 
 func (p *SanitizeModule) doSanitize(f pgs.File) bool {
@@ -234,8 +241,13 @@ func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 				}
 			} else {
 				if f.Type().ProtoType() == pgs.StringT {
-					location := fmt.Sprintf("File: %v, Message: %v, field: %v", f.File().Name(), f.Message().Name(), f.Name())
-					p.missingSanitization = append(p.missingSanitization, location)
+					fmt.Fprintf(
+						os.Stderr,
+						"%v:%d: no sanitize option on %v\n",
+						f.File().Name(),
+						f.SourceCodeInfo().Location().Span[0]+1,
+						f.FullyQualifiedName())
+					p.hasMissing = true
 				}
 			}
 		}
@@ -249,23 +261,6 @@ func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 		}
 		return p.buildSanitizeCall(f, string(name), "")
 	}
-	return ""
-}
-
-func (p *SanitizeModule) checkMissingSanitization(f pgs.File) string {
-	if len(p.missingSanitization) > 0 {
-		p.Log("Missing sanitization at the following places.")
-		for _, missing := range p.missingSanitization {
-			p.Logf("Missing sanitization - %v", missing)
-		}
-
-		if p.enforce {
-			p.Log("Sanitization is enforced. Add an option or explicitely disable the sanitization on the above fields")
-			os.Exit(1)
-		}
-
-	}
-
 	return ""
 }
 
@@ -290,5 +285,5 @@ func (m *{{ name . }}) Sanitize() {
     {{ sanitizer . }}
 {{ end }}
 }
-{{ end }}{{ checkMissingSanitization . }}
+{{ end }}
 `

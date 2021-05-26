@@ -6,9 +6,12 @@ import (
 )
 
 func main() {
-	pgs.
-		Init(pgs.DebugEnv("DEBUG_PG_SAN")).
-		RegisterModule(Sanitize()).
+
+	sanitizeModule := Sanitize()
+
+	pgs.Init(pgs.DebugEnv("DEBUG_PG_SAN")).
+		RegisterModule(sanitizeModule).
 		RegisterPostProcessor(pgsgo.GoFmt()).
 		Render()
+	sanitizeModule.ExitCheck()
 }
