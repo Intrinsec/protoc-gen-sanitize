@@ -7,5 +7,5 @@ import "tests/entity.proto";
 option go_package = "test";
 
 message SanitizeNested {
-    Entity1 entity = 1;
+    Entity1 entity1 = 1;
 }

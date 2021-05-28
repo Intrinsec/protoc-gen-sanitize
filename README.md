@@ -6,9 +6,13 @@ This project uses [protoc-gen-star](https://github.com/lyft/protoc-gen-star) to 
 
 ## Parameters
 
-The plugin can take `enforce` as a parameter to stop protoc generation if protobuf strings without explicit sanitization options (to enable or disable it) are encountered. This parameter prevent from missing sanitization.
+The plugin can take `strict` as a parameter to return an error if at least one of the following is found:
+    - protobuf strings without explicit sanitization options (to enable or disable it)
+    - sanitization is defined on a disabled message.
 
-The parameter can be given as `--sanitize_out=enforce:...` or on the dedicated command line flag `--sanitize_opt=enforce`.
+This parameter permits to stop CI/CD or build process.
+
+It can be given as `--sanitize_out=strict:...` or on the dedicated command line flag `--sanitize_opt=strict`.
 
 ## Tests
 

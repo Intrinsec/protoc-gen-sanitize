@@ -76,7 +76,7 @@ func TestSanitizable_Sanitize(t *testing.T) {
 		{
 			name: "Test sanitize subfield and not disable_field",
 			obj: &Entity5{
-				Entity: &Entity1{
+				Entity1: &Entity1{
 					Name: "<b>name</b>",
 					Text: "<pre>pre<iframe>text</iframe>post</pre>",
 					Uuid: "deadbeef",
@@ -86,7 +86,7 @@ func TestSanitizable_Sanitize(t *testing.T) {
 				},
 			},
 			want: &Entity5{
-				Entity: &Entity1{
+				Entity1: &Entity1{
 					Name: "name",
 					Text: "<pre>prepost</pre>",
 					Uuid: "deadbeef",
@@ -100,7 +100,7 @@ func TestSanitizable_Sanitize(t *testing.T) {
 		{
 			name: "Test sanitize repeated message",
 			obj: &Entity6{
-				Entitys: []*Entity1{
+				Entities: []*Entity1{
 					{
 						Name: "<b>name</b>",
 						Text: "<pre>pre<iframe>text</iframe>post</pre>",
@@ -112,7 +112,7 @@ func TestSanitizable_Sanitize(t *testing.T) {
 				},
 			},
 			want: &Entity6{
-				Entitys: []*Entity1{
+				Entities: []*Entity1{
 					{
 						Name: "name",
 						Text: "<pre>prepost</pre>",

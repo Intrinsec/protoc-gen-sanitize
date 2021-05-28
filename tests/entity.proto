@@ -48,7 +48,9 @@ message Entity3 {
         (sanitize.kind) = HTML
     ];
 
-    string uuid = 4;
+    string uuid = 4[
+        (sanitize.disable_field) = true
+    ];
 }
 
 message Entity4 {
@@ -57,12 +59,14 @@ message Entity4 {
 
     int64 value = 2;
 
-    string uuid = 4;
+    string uuid = 4[
+        (sanitize.kind) = HTML
+    ];
 }
 
 message Entity5 {
 
-    Entity1 entity = 2;
+    Entity1 entity1 = 2;
 
     Entity2 entity2 = 4 [
         (sanitize.disable_field) = true
@@ -72,7 +76,7 @@ message Entity5 {
 
 message Entity6 {
 
-    repeated Entity1 entitys = 2;
+    repeated Entity1 entities = 2;
 
     Entity2 entity2 = 4 [
         (sanitize.disable_field) = true
@@ -86,4 +90,15 @@ message Entity7 {
 
     Entity2 entity2 = 2;
 
+}
+
+
+message Entity8 {
+    string name = 1 [
+        (sanitize.disable_field) = true
+    ];
+
+    string text = 3 [
+        (sanitize.disable_field) = true
+    ];
 }
