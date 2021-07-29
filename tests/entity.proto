@@ -102,3 +102,10 @@ message Entity8 {
         (sanitize.disable_field) = true
     ];
 }
+
+
+message Entity9 {
+    repeated string id = 1 [
+        (sanitize.kind) = TEXT
+    ];
+}

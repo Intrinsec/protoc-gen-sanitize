@@ -22,6 +22,7 @@ func TestSanitizable_Sanitize(t *testing.T) {
 			Entity5{},
 			Entity6{},
 			Entity7{},
+			Entity9{},
 		),
 	}
 
@@ -151,6 +152,16 @@ func TestSanitizable_Sanitize(t *testing.T) {
 				Name: "<b>name</b>",
 			},
 			want: nil,
+		},
+		{
+			name: "Test entity field name do not collide with loop indexes",
+			obj: &Entity9{
+				Id: []string{"<b>name</b>"},
+			},
+			want: &Entity9{
+				Id: []string{"name"},
+			},
+			cmpOpts: cmpOpts,
 		},
 	}
 	for _, tt := range tests {

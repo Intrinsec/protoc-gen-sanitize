@@ -199,7 +199,7 @@ func (p *SanitizeModule) buildSanitizeCall(f pgs.Field, name string, sanitizeKin
 	if f.Type().IsRepeated() {
 		indent = "	"
 		suffix = "\n}"
-		elementName = strings.ToLower(string(name[0]))
+		elementName = strings.ToLower(string(name[0:2]))
 		if sanitizeKind == "" {
 			iter = "_"
 		}
