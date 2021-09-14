@@ -6,7 +6,7 @@ package octlantis.cpod.api_v1;
 
 import "sanitize/sanitize.proto";
 
-option go_package = "test";
+option go_package = "./tests;test";
 
 
 option (sanitize.disable_file) = true;

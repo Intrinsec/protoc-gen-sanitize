@@ -4,7 +4,7 @@ package test;
 
 import "tests/entity.proto";
 
-option go_package = "test";
+option go_package = "./tests;test";
 
 message SanitizeNested {
     Entity1 entity1 = 1;
