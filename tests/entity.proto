@@ -9,7 +9,7 @@ package test;
 
 import "sanitize/sanitize.proto";
 
-option go_package = "test";
+option go_package = "./tests;test";
 
 message Entity1 {
 
