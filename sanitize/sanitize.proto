@@ -1,3 +1,5 @@
+// Copyright 2021 Intrinsec. All rights reserved.
+
 syntax = "proto3";
 package sanitize;
 
