@@ -221,7 +221,7 @@ func (p *SanitizeModule) buildSanitizeCall(f pgs.Field, name string, sanitizeKin
 		}
 		sanitizeCall = fmt.Sprintf(format, elementName)
 	} else {
-		// building calls for message
+		// building calls for string
 		sanitizeCall = formatSanitizeCalls(name, elementName, sanitizeKind, f.Type().IsRepeated(), trim)
 	}
 	return fmt.Sprintf("%s%s%s%s", prefix, indent, sanitizeCall, suffix)
