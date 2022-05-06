@@ -23,11 +23,12 @@ install: $(NAME)/$(NAME).pb.go
 $(NAME)/$(NAME).pb.go: bin/protoc-gen-go $(NAME)/$(NAME).proto
 	@cd $(NAME) && protoc -I . \
 		--plugin=protoc-gen-go=$(shell pwd)/bin/protoc-gen-go \
+		--experimental_allow_proto3_optional \
 		--go_opt=paths=source_relative \
 		--go_out="${GO_IMPORT}:." $(NAME).proto
 
 bin/protoc-gen-go:
-	@GOBIN=$(shell pwd)/bin go install google.golang.org/protobuf/cmd/protoc-gen-go
+	@GOBIN=$(shell pwd)/bin go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 
 
 bin/protoc-gen-$(NAME): $(NAME)/$(NAME).pb.go $(wildcard *.go)
