@@ -215,16 +215,6 @@ func TestSanitizable_Sanitize(t *testing.T) {
 			},
 			cmpOpts: cmpOpts,
 		},
-		{
-			name: "Test color attribute in html field",
-			obj: &Entity1{
-				Text: "<h1 style=\"color:red\">text</h1>",
-			},
-			want: &Entity1{
-				Text: "<h1 style=\"color: red\">text</h1>",
-			},
-			cmpOpts: cmpOpts,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
