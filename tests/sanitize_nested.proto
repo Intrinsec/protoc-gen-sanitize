@@ -3,9 +3,18 @@ syntax = "proto3";
 package test;
 
 import "tests/entity.proto";
+import "tests/no_sanitize.proto";
 
 option go_package = "./tests;test";
 
 message SanitizeNested {
     Entity1 entity1 = 1;
+}
+
+message SanitizeNested2 {
+    Entity7 entity7 = 1;
+}
+
+message SanitizeNested3 {
+    NoSanitize noSanitize = 1;
 }

@@ -17,19 +17,17 @@ import (
 // SanitizeModule adds Sanitize methods on PB
 type SanitizeModule struct {
 	*pgs.ModuleBase
-	ctx              pgsgo.Context
-	tpl              *template.Template
-	importBluemonday map[pgs.File]bool
-	strict           bool
-	hasErrors        bool
+	ctx       pgsgo.Context
+	tpl       *template.Template
+	strict    bool
+	hasErrors bool
 }
 
 // Sanitize returns an initialized SanitizePlugin
 func Sanitize() *SanitizeModule {
 	return &SanitizeModule{
-		ModuleBase:       &pgs.ModuleBase{},
-		importBluemonday: make(map[pgs.File]bool),
-		hasErrors:        false,
+		ModuleBase: &pgs.ModuleBase{},
+		hasErrors:  false,
 	}
 }
 
@@ -40,14 +38,13 @@ func (p *SanitizeModule) InitContext(c pgs.BuildContext) {
 	p.ctx = pgsgo.InitContext(c.Parameters())
 
 	tpl := template.New("Sanitize").Funcs(map[string]interface{}{
-		"package":            p.ctx.PackageName,
-		"name":               p.ctx.Name,
-		"sanitizer":          p.sanitizer,
-		"initializer":        p.initializer,
-		"leadingCommenter":   p.leadingCommenter,
-		"doImportBluemonday": p.doImportBluemonday,
-		"isDisabledMessage":  p.isDisabledMessage,
-		"checkNoSanitize":    p.checkNoSanitize,
+		"package":           p.ctx.PackageName,
+		"name":              p.ctx.Name,
+		"sanitizer":         p.sanitizer,
+		"initializer":       p.initializer,
+		"leadingCommenter":  p.leadingCommenter,
+		"isDisabledMessage": p.isDisabledMessage,
+		"checkNoSanitize":   p.checkNoSanitize,
 	})
 
 	p.tpl = template.Must(tpl.Parse(sanitizeTpl))
@@ -84,8 +81,6 @@ func (p *SanitizeModule) ExitCheck() {
 func (p *SanitizeModule) doSanitize(f pgs.File) bool {
 	var disableFile bool
 
-	p.importBluemonday[f] = false
-
 	if ok, err := f.Extension(sanitize.E_DisableFile, &disableFile); ok && err == nil && disableFile {
 		p.Debug("Skipping: ", f.InputPath())
 		return false
@@ -99,10 +94,8 @@ func (p *SanitizeModule) doSanitize(f pgs.File) bool {
 		}
 
 		for _, field := range m.Fields() {
-			var kind sanitize.Sanitization
-			if ok, err := field.Extension(sanitize.E_Kind, &kind); ok && err == nil {
-				// Only case where we will use bluemonday in the generated code
-				p.importBluemonday[f] = true
+			var rules sanitize.FieldRules
+			if ok, err := field.Extension(sanitize.E_Rules, &rules); ok && err == nil {
 				return true
 			}
 		}
@@ -111,15 +104,6 @@ func (p *SanitizeModule) doSanitize(f pgs.File) bool {
 	p.Debug("No sanitization options encountered for:", f.InputPath())
 	// Nonetheless we generate sanitization function to enable calling sanitization function of nested messages
 	return true
-}
-
-func (p *SanitizeModule) doImportBluemonday(f pgs.File) bool {
-	p.Debug("doImportBluemonday")
-	if value, ok := p.importBluemonday[f]; ok {
-		p.Debug(value)
-		return value
-	}
-	return false
 }
 
 func (p *SanitizeModule) generateFile(f pgs.File) {
@@ -165,18 +149,14 @@ func (p *SanitizeModule) initializer(m pgs.Message) string {
 	}
 
 	for _, f := range m.Fields() {
-		var kind sanitize.Sanitization
+		var rules sanitize.FieldRules
 
-		if ok, err := f.Extension(sanitize.E_Kind, &kind); ok && err == nil {
-			switch kind {
-			case sanitize.Sanitization_NONE:
-				break
+		if ok, err := f.Extension(sanitize.E_Rules, &rules); ok && err == nil {
+			switch rules.Kind {
 			case sanitize.Sanitization_HTML:
 				html = true
-				break
 			case sanitize.Sanitization_TEXT:
 				text = true
-				break
 			}
 		}
 	}
@@ -190,7 +170,27 @@ func (p *SanitizeModule) initializer(m pgs.Message) string {
 	return strings.Join(out, "\n	")
 }
 
-func (p *SanitizeModule) buildSanitizeCall(f pgs.Field, name string, sanitizeKind string) string {
+func formatSanitizeCalls(varName string, argName string, sanitizeKind string, isRepeated bool, trim bool) string {
+
+	sanitizeCalls := []string{}
+
+	if isRepeated {
+		varName = fmt.Sprintf("m.%s[i]", varName)
+	} else {
+		varName = fmt.Sprintf("m.%s", varName)
+		argName = fmt.Sprintf("m.%s", argName)
+	}
+
+	sanitizeCalls = append(sanitizeCalls, fmt.Sprintf("%s = %sSanitize.Sanitize(%s)", varName, strings.ToLower(sanitizeKind), argName))
+
+	if trim {
+		sanitizeCalls = append(sanitizeCalls, fmt.Sprintf("%[1]s = strings.TrimSpace(%[1]s)", varName))
+	}
+
+	return strings.Join(sanitizeCalls, "\n")
+}
+
+func (p *SanitizeModule) buildSanitizeCall(f pgs.Field, name string, sanitizeKind string, trim bool) string {
 	prefix := ""
 	suffix := ""
 	indent := ""
@@ -221,13 +221,8 @@ func (p *SanitizeModule) buildSanitizeCall(f pgs.Field, name string, sanitizeKin
 		}
 		sanitizeCall = fmt.Sprintf(format, elementName)
 	} else {
-		// building call for string
-		if f.Type().IsRepeated() {
-			format = "m.%s[i] = %sSanitize.Sanitize(%s)"
-		} else {
-			format = "m.%s = %sSanitize.Sanitize(m.%s)"
-		}
-		sanitizeCall = fmt.Sprintf(format, name, strings.ToLower(sanitizeKind), elementName)
+		// building calls for message
+		sanitizeCall = formatSanitizeCalls(name, elementName, sanitizeKind, f.Type().IsRepeated(), trim)
 	}
 	return fmt.Sprintf("%s%s%s%s", prefix, indent, sanitizeCall, suffix)
 }
@@ -239,10 +234,10 @@ func (p *SanitizeModule) isDisabledMessage(m pgs.Message) bool {
 }
 
 func (p *SanitizeModule) checkNoSanitize(f pgs.Field) string {
-	var kind sanitize.Sanitization
+	var rules sanitize.FieldRules
 
 	name := p.ctx.Name(f)
-	ok, err := f.Extension(sanitize.E_Kind, &kind)
+	ok, err := f.Extension(sanitize.E_Rules, &rules)
 
 	if err == nil && ok {
 		fmt.Fprintf(
@@ -269,34 +264,30 @@ func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 
 	switch f.Type().ProtoType() {
 	case pgs.StringT:
-		var kind sanitize.Sanitization
+		var rules sanitize.FieldRules
 
-		ok, err := f.Extension(sanitize.E_Kind, &kind)
-		if err == nil {
-			if ok {
-				switch kind {
-				case sanitize.Sanitization_NONE:
-					return ""
-				case sanitize.Sanitization_HTML:
-					return p.buildSanitizeCall(f, string(name), "html")
-				case sanitize.Sanitization_TEXT:
-					return p.buildSanitizeCall(f, string(name), "text")
-				}
-			} else {
-				if f.Type().ProtoType() == pgs.StringT {
-					fmt.Fprintf(
-						os.Stderr,
-						"%v:%d: no sanitize option on %v\n",
-						f.File().Name(),
-						f.SourceCodeInfo().Location().Span[0]+1,
-						f.FullyQualifiedName())
-					p.hasErrors = true
-				}
+		ok, err := f.Extension(sanitize.E_Rules, &rules)
+		if err != nil {
+			p.Logf(
+				"%v:%d: Error can't retrieve rules extension for message %s with error: %s",
+				f.File().Name(),
+				f.SourceCodeInfo().Location().Span[0]+1,
+				f.FullyQualifiedName(),
+				err,
+			)
+			p.hasErrors = true
+		} else if ok {
+			switch rules.Kind {
+			case sanitize.Sanitization_HTML:
+				return p.buildSanitizeCall(f, string(name), "html", rules.GetTrim())
+			case sanitize.Sanitization_TEXT:
+				result := p.buildSanitizeCall(f, string(name), "text", rules.GetTrim())
+				return result
 			}
 		}
 
 	case pgs.MessageT:
-		return p.buildSanitizeCall(f, string(name), "")
+		return p.buildSanitizeCall(f, string(name), "", false)
 	}
 	return ""
 }
@@ -304,11 +295,9 @@ func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 const sanitizeTpl = `{{ leadingCommenter . }}
 
 package {{ package . }}
-{{ if doImportBluemonday . }}
-import (
-	"github.com/microcosm-cc/bluemonday"
-)
-{{ end }}
+
+import "github.com/microcosm-cc/bluemonday"
+import "strings"
 
 {{ range .AllMessages }}
 func (m *{{ name . }}) Sanitize() {

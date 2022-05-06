@@ -12,86 +12,89 @@ import "sanitize/sanitize.proto";
 option go_package = "./tests;test";
 
 message Entity1 {
-
     string name = 1 [
-        (sanitize.kind) = TEXT
+        (sanitize.rules) = {
+            kind: TEXT,
+            trim: true
+        }
     ];
 
     int64 value = 2;
 
     string text = 3 [
-        (sanitize.kind) = HTML
+        (sanitize.rules) = {
+            kind: HTML,
+            trim: true
+        }
     ];
 
     string uuid = 4;
 }
 
-
 message Entity2 {
-
     string name = 1 [
-        (sanitize.kind) = TEXT
+        (sanitize.rules) = {
+            kind: TEXT,
+            trim: true
+        }
     ];
 
     int64 value = 2;
 
-    repeated string uuids = 3[
-        (sanitize.kind) = TEXT
+    repeated string uuids = 3 [
+        (sanitize.rules) = {
+            kind: TEXT,
+            trim: true
+        }
     ];
 }
 
 message Entity3 {
-
     int64 value = 2;
 
     string text = 3 [
-        (sanitize.kind) = HTML
+        (sanitize.rules) = {
+            kind: HTML,
+            trim: false
+        }
     ];
 
-    string uuid = 4[
+    string uuid = 4 [
         (sanitize.disable_field) = true
     ];
 }
 
 message Entity4 {
-
     option (sanitize.disable_message) = true;
 
     int64 value = 2;
 
-    string uuid = 4[
-        (sanitize.kind) = HTML
+    string uuid = 4 [
+        (sanitize.rules).kind = HTML
     ];
 }
 
 message Entity5 {
-
     Entity1 entity1 = 2;
 
     Entity2 entity2 = 4 [
         (sanitize.disable_field) = true
     ];
-
 }
 
 message Entity6 {
-
     repeated Entity1 entities = 2;
 
     Entity2 entity2 = 4 [
         (sanitize.disable_field) = true
     ];
-
 }
 
 message Entity7 {
-
     Entity1 entity1 = 1;
 
     Entity2 entity2 = 2;
-
 }
-
 
 message Entity8 {
     string name = 1 [
@@ -103,9 +106,8 @@ message Entity8 {
     ];
 }
 
-
 message Entity9 {
     repeated string id = 1 [
-        (sanitize.kind) = TEXT
+        (sanitize.rules).kind = TEXT
     ];
 }

@@ -163,6 +163,68 @@ func TestSanitizable_Sanitize(t *testing.T) {
 			},
 			cmpOpts: cmpOpts,
 		},
+		{
+			name: "Test entity only spaces in field name ",
+			obj: &Entity2{
+				Name:  "       ",
+				Value: 123,
+				Uuids: []string{"      ", " "},
+			},
+			want: &Entity2{
+				Name:  "",
+				Value: 123,
+				Uuids: []string{"", ""},
+			},
+			cmpOpts: cmpOpts,
+		},
+		{
+			name: "Test entity only spaces in field name after sanitization",
+			obj: &Entity2{
+				Name:  " <a>       </a>",
+				Value: 123,
+				Uuids: []string{"<h1>      </h1> ", " <b> </b>"},
+			},
+			want: &Entity2{
+				Name:  "",
+				Value: 123,
+				Uuids: []string{"", ""},
+			},
+			cmpOpts: cmpOpts,
+		},
+		{
+			name: "Test text and html trim",
+			obj: &Entity1{
+				Name: "  <b>name</b> ",
+				Text: " <pre> <iframe>text</iframe> </pre> ",
+				Uuid: " deadbeef ",
+			},
+			want: &Entity1{
+				Name: "name",
+				Text: "<pre>  </pre>",
+				Uuid: " deadbeef ",
+			},
+			cmpOpts: cmpOpts,
+		},
+		{
+			name: "Test empty string after html sanitize",
+			obj: &Entity1{
+				Text: " <iframe>text</iframe>  ",
+			},
+			want: &Entity1{
+				Text: "",
+			},
+			cmpOpts: cmpOpts,
+		},
+		{
+			name: "Test color attribute in html field",
+			obj: &Entity1{
+				Text: "<h1 style=\"color:red\">text</h1>",
+			},
+			want: &Entity1{
+				Text: "<h1 style=\"color: red\">text</h1>",
+			},
+			cmpOpts: cmpOpts,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
