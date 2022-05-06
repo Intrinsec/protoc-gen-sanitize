@@ -1,3 +1,5 @@
+// Copyright Example 2021-2022
+
 syntax = "proto3";
 
 package test;

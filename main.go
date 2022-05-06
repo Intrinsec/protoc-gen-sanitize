@@ -1,4 +1,4 @@
-// Copyright 2021 Intrinsec. All rights reserved.
+// Copyright 2021-2022 Intrinsec. All rights reserved.
 
 package main
 
