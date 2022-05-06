@@ -14,6 +14,7 @@ func main() {
 	pgs.Init(pgs.DebugEnv("DEBUG_PG_SAN")).
 		RegisterModule(sanitizeModule).
 		RegisterPostProcessor(pgsgo.GoFmt()).
+		RegisterPostProcessor(GoImports()).
 		Render()
 	sanitizeModule.ExitCheck()
 }
