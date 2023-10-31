@@ -37,7 +37,7 @@ bin/protoc-gen-$(NAME): $(NAME)/$(NAME).pb.go $(wildcard *.go)
 .PHONY: test
 test: build
 	@protoc -I . --plugin=protoc-gen-go=$(shell pwd)/bin/protoc-gen-go --go_out="." tests/*.proto
-	@protoc -I . --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_out=tests tests/*.proto
+	@protoc -I . --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_out=. tests/*.proto
 	@cat tests/entity.pb.$(NAME).go
 	@cd tests && go test -v .
 

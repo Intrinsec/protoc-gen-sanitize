@@ -114,11 +114,11 @@ func (p *SanitizeModule) generateFile(f pgs.File) {
 	defer p.Pop()
 	p.Debug("File:", f.InputPath())
 
-	name := f.InputPath().BaseName() + ".pb.sanitize.go"
+	name := p.ctx.OutputPath(f).SetExt(".sanitize.go")
 
 	p.Debug("generate:", name)
 
-	p.AddGeneratorTemplateFile(name, p.tpl, f)
+	p.AddGeneratorTemplateFile(name.String(), p.tpl, f)
 }
 
 func (p *SanitizeModule) leadingCommenter(f pgs.File) string {
@@ -171,7 +171,6 @@ func (p *SanitizeModule) initializer(m pgs.Message) string {
 }
 
 func formatSanitizeCalls(varName string, argName string, sanitizeKind string, isRepeated bool, trim bool) string {
-
 	sanitizeCalls := []string{}
 
 	if isRepeated {
