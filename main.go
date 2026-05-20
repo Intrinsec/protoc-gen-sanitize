@@ -7,7 +7,17 @@ import (
 	pgsgo "github.com/lyft/protoc-gen-star/lang/go"
 )
 
+// version and commit are populated at build time by goreleaser via
+// `-ldflags "-X main.version=... -X main.commit=..."`. Unused at the
+// protoc protocol level (plugins have no `--version` flag), but kept so
+// `strings <binary> | grep main.version` reveals the build provenance.
+var (
+	version = "dev"
+	commit  = "none"
+)
+
 func main() {
+	_, _ = version, commit
 
 	sanitizeModule := Sanitize()
 

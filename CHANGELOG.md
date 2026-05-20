@@ -7,6 +7,12 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-05-20
+
+First tagged release following the iagen-dev onboarding pass.
+Predecessors `v0.0.1` … `v0.0.15` were untagged-from-Changelog snapshots;
+this entry summarizes the user-visible delta since `v0.0.15`.
+
 ### Added
 
 - Source-relative output paths. Generated `.pb.sanitize.go` files now sit
@@ -16,6 +22,9 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `bar/a.proto` both producing `a.pb.sanitize.go`) now generate
   collision-free outputs.
 - Multi-package regression test fixture (`tests/sub/`).
+- `main.version` and `main.commit` build-time variables, populated by
+  goreleaser via `-ldflags -X`. Visible with
+  `strings <binary> | grep main.version`.
 
 ### Changed
 
@@ -47,4 +56,5 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 <!-- Internal-only changes (CI bootstrap, AGENTS.md, lint fixes, docs)
      intentionally omitted per Keep-a-Changelog wording rules. -->
 
-[Unreleased]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v0.0.0...HEAD
+[Unreleased]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v0.0.15...v0.1.0
