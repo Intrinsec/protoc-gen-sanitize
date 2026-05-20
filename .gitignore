@@ -1,5 +1,7 @@
 bin/
 *.sanitize
+tests/**/*.pb.go
+tests/**/*.pb.sanitize.go
 tests/*.pb.go
 tests/*.pb.sanitize.go
 tests/cover.out

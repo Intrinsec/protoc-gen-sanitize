@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package sub;
+
+import "sanitize/sanitize.proto";
+
+option go_package = "./tests/sub;sub";
+
+message SubEntity {
+    string name = 1 [
+        (sanitize.rules) = {
+            kind: TEXT,
+            trim: true
+        }
+    ];
+}
