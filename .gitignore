@@ -2,3 +2,7 @@ bin/
 *.sanitize
 tests/*.pb.go
 tests/*.pb.sanitize.go
+tests/cover.out
+sbom.cdx.json
+.govulncheck-baseline.txt
+dist/

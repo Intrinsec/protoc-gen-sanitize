@@ -18,7 +18,7 @@ build: bin/protoc-gen-$(NAME)
 
 .PHONY: install
 install: $(NAME)/$(NAME).pb.go
-	@go install -v .
+	@go install -mod=vendor -v .
 
 $(NAME)/$(NAME).pb.go: bin/protoc-gen-go $(NAME)/$(NAME).proto
 	@cd $(NAME) && protoc -I . \
@@ -32,14 +32,43 @@ bin/protoc-gen-go:
 
 
 bin/protoc-gen-$(NAME): $(NAME)/$(NAME).pb.go $(wildcard *.go)
-	@GOBIN=$(shell pwd)/bin go install .
+	@GOBIN=$(shell pwd)/bin go install -mod=vendor .
 
-.PHONY: test
-test: build
+.PHONY: generate
+generate: bin/protoc-gen-go bin/protoc-gen-$(NAME)
 	@protoc -I . --plugin=protoc-gen-go=$(shell pwd)/bin/protoc-gen-go --go_out="." tests/*.proto
 	@protoc -I . --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_out=tests tests/*.proto
+
+.PHONY: test
+test: generate
 	@cat tests/entity.pb.$(NAME).go
-	@cd tests && go test -v .
+	@cd tests && go test -mod=vendor -v -coverprofile=cover.out -covermode=atomic .
+	@go tool cover -func=tests/cover.out | tail -1
+
+.PHONY: lint
+lint: generate
+	@golangci-lint run ./...
+
+.PHONY: vuln
+vuln:
+	@govulncheck ./...
+
+.PHONY: vendor-check
+vendor-check:
+	@go mod tidy
+	@go mod vendor
+	@git diff --exit-code -- go.mod go.sum vendor/ \
+		|| (echo "vendor/ out of date — run 'go mod tidy && go mod vendor'"; exit 1)
+
+.PHONY: sbom
+sbom:
+	@syft dir:. -o cyclonedx-json=sbom.cdx.json
+
+.PHONY: license-check
+license-check:
+	@set -o pipefail; GOFLAGS="-tags=codegenruntime" go-licenses report ./... 2>/dev/null \
+	  | awk -F',' 'NR==FNR{ok[$$1]=1;next} {if(!ok[$$3]){print "DISALLOWED:",$$1,$$3;bad=1}} END{exit bad?1:0}' \
+	    .license-allowlist.txt -
 
 
 .PHONY: clean

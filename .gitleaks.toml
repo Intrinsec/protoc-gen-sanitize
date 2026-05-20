@@ -1,0 +1,11 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "protoc-gen-sanitize allowlist"
+paths = [
+  '''sanitize/sanitize\.pb\.go''',
+  '''tests/.*\.pb\.go''',
+  '''tests/.*\.pb\.sanitize\.go''',
+  '''vendor/.*''',
+]

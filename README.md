@@ -25,3 +25,9 @@ In the `tests` directory there are various samples of `.proto` files to show usa
 ## Debug
 
 To debug in vscode (not working well right know but you can try), edit the `test` task in the Makefile to give the path of the `protoc-gen-sanitize` script (at the root of this project) instead of the protoc-gen-sanitize binary in the `./bin` dir.
+
+## Development
+
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for prerequisites, workflow,
+and release procedure. Project standards are documented in
+[AGENTS.md](AGENTS.md).
