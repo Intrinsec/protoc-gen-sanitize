@@ -19,7 +19,11 @@ builds:
     goarch: [amd64, arm64]
 
 archives:
-  - format: tar.gz
+  - id: archive
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - id: binary
+    format: binary
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
