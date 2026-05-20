@@ -36,10 +36,12 @@ bin/protoc-gen-go:
 bin/protoc-gen-$(NAME): $(NAME)/$(NAME).pb.go $(wildcard *.go)
 	@GOBIN=$(shell pwd)/bin go install -mod=vendor .
 
+PROTO_FIXTURES := $(shell find tests -name '*.proto' 2>/dev/null)
+
 .PHONY: generate
 generate: bin/protoc-gen-go bin/protoc-gen-$(NAME)
-	@protoc -I . --plugin=protoc-gen-go=$(shell pwd)/bin/protoc-gen-go --go_out="." tests/*.proto
-	@protoc -I . --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_out=tests tests/*.proto
+	@protoc -I . --plugin=protoc-gen-go=$(shell pwd)/bin/protoc-gen-go --go_out="." $(PROTO_FIXTURES)
+	@protoc -I . --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_out=. $(PROTO_FIXTURES)
 
 .PHONY: test
 test: generate
