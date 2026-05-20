@@ -1,9 +1,9 @@
 version: 2
 
-before:
-  hooks:
-    - make generate
-    - go mod tidy
+# No `before.hooks`: the plugin binary builds straight from the vendored
+# module tree (`-mod=vendor`); the `make generate` step only produces
+# test fixtures unused by the released artifact, and `go mod tidy` risks
+# dirtying the git tree, which would abort `goreleaser release --clean`.
 
 builds:
   - id: protoc-gen-sanitize
