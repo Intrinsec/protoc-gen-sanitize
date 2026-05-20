@@ -1,0 +1,34 @@
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+  tests: true
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - revive
+    - gosec
+    - misspell
+    - unconvert
+    - copyloopvar
+  exclusions:
+    paths:
+      - "sanitize/sanitize.pb.go"
+      - "tests/.*\\.pb\\.go$"
+      - "tests/.*\\.pb\\.sanitize\\.go$"
+      - "vendor/.*"
+    rules:
+      - path: "tests/"
+        linters:
+          - gosec
