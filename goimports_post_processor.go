@@ -1,6 +1,8 @@
-// This post processor comes from this PR: https://github.com/lyft/protoc-gen-star/pull/96/commits
-// This file can be deleted once protoc-gen-star releases a new version with this PR
-
+// Package main hosts the `protoc-gen-sanitize` plugin.
+//
+// This file's post-processor was lifted from
+// https://github.com/lyft/protoc-gen-star/pull/96 and can be deleted once
+// protoc-gen-star ships a release including that PR.
 package main
 
 import (

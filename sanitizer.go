@@ -54,7 +54,7 @@ func (p *SanitizeModule) InitContext(c pgs.BuildContext) {
 func (p *SanitizeModule) Name() string { return "Sanitize" }
 
 // Execute generates sanitization code for files
-func (p *SanitizeModule) Execute(targets map[string]pgs.File, pkgs map[string]pgs.Package) []pgs.Artifact {
+func (p *SanitizeModule) Execute(targets map[string]pgs.File, _ map[string]pgs.Package) []pgs.Artifact {
 	p.Debug("Execute")
 
 	if ok, _ := p.Parameters().Bool("strict"); ok {
@@ -201,7 +201,7 @@ func (p *SanitizeModule) buildSanitizeCall(f pgs.Field, name string, sanitizeKin
 	if f.Type().IsRepeated() {
 		indent = "	"
 		suffix = "\n}"
-		elementName = strings.ToLower(string(name[0:2]))
+		elementName = strings.ToLower(name[0:2])
 		if sanitizeKind == "" {
 			iter = "_"
 		}
