@@ -24,6 +24,20 @@ field has no explicit sanitization option, so CI/CD pipelines that depend on
 
 ## Language
 
+Default agent response: English, even if user writes French.
+French response only when user explicitly asks French.
+
+Caveman compression **mandatory** for all conversational responses (default level: `full`).
+Code blocks, commit messages, PR descriptions, security warnings, irreversible-action
+confirmations stay normal prose (Caveman auto-clarity rules). Do not disable Caveman unless
+user says "stop caveman" or "normal mode".
+
+HARD RULE: all code, comments, identifiers, doc strings, commit messages, ADRs, technical
+docs in English — every project type, regardless of team spoken language.
+User-facing strings + UI copy exempt — match audience language.
+
+**Project specifics:**
+
 - Go 1.18 minimum (raise floor to current stable when bumping deps).
 - Avoid runtime reflection where compile-time type checking is possible.
 - Generated test files (`tests/*.pb.go`, `tests/*.pb.sanitize.go`) must be
@@ -32,24 +46,145 @@ field has no explicit sanitization option, so CI/CD pipelines that depend on
   EntityN` otherwise. This is by design (we do not commit generated test
   artifacts), so every workflow that lints or tests must run codegen first.
 
-## Workflow Skills
+## Workflow Skills (mandatory)
 
-Mandatory skills to invoke before/during work on this repo:
+Every agent session in this repo must load + apply these skill packs:
 
-- `superpowers:brainstorming` — for any new feature, option, or behavior change.
-- `superpowers:writing-plans` — for any multi-step change. Plans live under
-  `docs/superpowers/plans/`.
+- **superpowers** — process discipline (`brainstorming`, `writing-plans`, `executing-plans`,
+  `test-driven-development`, `systematic-debugging`, `verification-before-completion`,
+  `requesting-code-review`).
+- **caveman** — response compression (see Language section).
+
+Pack missing? Install per iagen-dev `INSTALL.md` before work.
+
+### Session start gate
+
+Before any response, clarification, repository inspection, shell command, or file edit:
+run `superpowers:using-superpowers` first, then run `caveman` so compression is active
+for every response. Use `superpowers:using-superpowers` to decide which additional
+skills apply, then follow the selected skill workflows.
+
+### Plan-writing mandatory before non-trivial implementation
+
+Any feature, refactor, bugfix touching more than one function, or agent cannot reason in
+one pass:
+
+1. Run `superpowers:brainstorming` — clarify intent + requirements.
+2. Run `superpowers:writing-plans` — persist plan at `docs/superpowers/plans/<short-name>.md`
+   (commit to git).
+3. Execute via `superpowers:executing-plans` (single-session) or
+   `superpowers:subagent-driven-development` (parallelisable steps).
+4. Gate completion with `superpowers:verification-before-completion` — no "done" claim
+   without evidence (test output, lint output, build output).
+
+**Trivial edits exception:** typos, single-line config tweaks, self-evident one-liners
+skip steps 1–3 but still verify before claiming done.
+
+### Bug fixes go through systematic-debugging
+
+Any bug, failing test, unexpected behaviour → `superpowers:systematic-debugging` first.
+No symptom patching without root cause.
+
+### Code review before merge
+
+Before merge or PR for non-trivial work: run `superpowers:requesting-code-review`.
+
+### Project-specific skill mapping
+
 - `superpowers:test-driven-development` — write or update `tests/*.proto` +
   `entity_test.go` expectations before touching `sanitizer.go`.
-- `superpowers:systematic-debugging` — when a generated file is wrong, do not
-  patch the generator blindly; reproduce the codegen output against a minimal
-  `.proto`, then trace the template.
-- `superpowers:verification-before-completion` — `make test` must pass (lint +
-  generate + go test) before claiming done. `golangci-lint run ./...` must be
-  clean against generated code in place.
-- `superpowers:requesting-code-review` — before merge to `master`.
 - `caveman-commit` — commit messages.
 - `caveman-review` — PR review comments.
+
+## Code Quality
+
+After modifying any Go file: run `golangci-lint run ./...` before marking work complete.
+Fix all lint errors, re-run until clean. Lint errors = task not done.
+`gofmt` non-negotiable — zero diff allowed. Run `gofmt -w .` if in doubt.
+
+In this repo, `make lint` runs `make generate` first so the linter has the codegen
+output in place — see `## Linting` below for the codegen-first ordering rationale.
+
+## Generated Code
+
+Generated sources are **read-only**. Never hand-edit files produced by a code generator:
+
+- `protoc` / `buf` outputs for gRPC + Protobuf (typically `*.pb.go`, `*_grpc.pb.go`,
+  often under `gen/`, `pb/`, or `proto/`)
+- `mockgen` / `moq` mocks
+- `sqlc`, `ent`, `gqlgen`, `wire_gen.go`, `oapi-codegen`, `swag` outputs
+- any file with a `// Code generated ... DO NOT EDIT.` header
+
+To change generated code: change the source of truth (`.proto`, `.sql`, schema, interface)
+then re-run the generator (`buf generate`, `go generate ./...`, `sqlc generate`, etc.).
+Commit the regenerated files alongside the source change in the same commit.
+
+**This project's particularity:** `protoc-gen-sanitize` IS a code generator. Two
+separate categories of generated code exist:
+
+- `sanitize/sanitize.pb.go` — generated from `sanitize/sanitize.proto`, **committed**
+  (consumers import it).
+- `tests/*.pb.go`, `tests/*.pb.sanitize.go` — generated by `make test`, **NOT
+  committed** (regenerated on every run; tests rely on them being fresh).
+
+Modifying the plugin's codegen templates (in `sanitizer.go`) is a source-of-truth
+edit, not a generated-code edit — covered by normal lint + test rules.
+
+## Error Handling
+
+"Crash early, let orchestrator recover" model:
+- Transient errors (network, timeout): retry 1–3× exponential backoff, log each retry
+  at WARN. Retries exhausted → log ERROR with full context, exit non-zero.
+- Structural errors (missing config, unavailable critical dep): crash immediately at
+  startup. No retry.
+Never swallow errors silently. Every error includes enough context for diagnosis
+without accessing running pod.
+
+**For this plugin:** errors during codegen must surface back to `protoc` via the
+plugin protocol (return non-zero, write diagnostic to stderr). Strict mode
+(`--sanitize_opt=strict`) escalates "missing sanitization option" warnings to
+errors so CI/CD pipelines fail fast on unsanitized fields.
+
+## Documentation Coherence
+
+After any meaningful change (feature, bugfix touching public behaviour, API surface,
+config schema, CLI flags, deps with user impact): verify `README.md` + `docs/**` still
+match shipped reality before mark task done. Out-of-sync doc = task not done.
+
+Pre-release sweep (mandatory before every tag, all release levels):
+- README accurate — install steps, quickstart, examples runnable as-is.
+- All in-repo doc links + references resolve (no dead anchors, no stale paths).
+- Public API docs match shipped surface (endpoints, flags, env vars).
+- Migration notes present for breaking changes.
+- Screenshots / diagrams reflect current UI + architecture.
+- `CHANGELOG.md` matches release scope (see Changelog section).
+
+Release blocked if sweep fails. Doc fix = same MR as code change, never separate
+follow-up.
+
+## Changelog
+
+Maintain user-friendly `CHANGELOG.md` at repo root. Format: Keep-a-Changelog
+(https://keepachangelog.com/en/1.1.0/) + SemVer.
+
+Every user-visible change → entry under `## [Unreleased]` with one type:
+`Added` / `Changed` / `Deprecated` / `Removed` / `Fixed` / `Security`.
+
+Wording rules (user-facing, not commit log):
+- End-user perspective. No commit hash, no internal module name, no implementation
+  detail.
+- Bad: "refactor auth middleware to use JWT v2 lib".
+- Good: "Sessions survive backend restarts; existing tokens stay valid".
+- Breaking changes prefix `**BREAKING:**` + 1-3 line migration note.
+
+Release cut process:
+1. Rename `## [Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`.
+2. Create fresh empty `## [Unreleased]` block at top.
+3. Tag matches header version exactly (`vX.Y.Z`).
+4. Bump compare links at file bottom.
+
+Internal-only changes (refactor with zero user impact, test infra, CI config) skip
+CHANGELOG entry — but if in doubt, log under `Changed`.
 
 ## Tooling
 
@@ -70,13 +205,20 @@ Required on developer machine and in CI:
 - Zero-issue policy on tracked code (generated `*.pb.*.go` files excluded via
   `issues.exclude-files` or `path-except`).
 
-## Vulnerability scanning
+## Vulnerability Scanning
+
+After modifying `go.mod` / `go.sum`: run `govulncheck ./...` before marking work complete.
+(`vendor/` is honored via `GOFLAGS=-mod=vendor` in env; govulncheck has no `-mod` CLI flag.)
+Fix called vulns: `go get <module>@<fixed>`, `go mod tidy`, re-vendor if applicable,
+re-run until clean. Imported-only vulns: report to user.
+Called vulns remaining = task not done.
+
+**Project specifics:**
 
 - `govulncheck ./...` must report zero **called** vulnerabilities.
 - Uncalled CVEs in transitive modules are tracked but do not block merge —
   bump via Renovate when patch available.
-- Wire to CI as a non-skippable job (see `docs/superpowers/plans/...
-  -onboard-vuln-scanning.md`).
+- Wired to CI as a non-skippable job (`.github/workflows/ci.yml` `vuln` job).
 
 ## Vendoring
 
@@ -171,6 +313,11 @@ Re-evaluate on tier change or quarterly review.
 | API contract (REST/gRPC/OpenAPI/proto schema) | `not-applicable` | Plugin consumes `.proto` but does not serve an API. `sanitize/sanitize.proto` is an options schema, not an external contract. |
 | Container hardening (distroless, non-root, healthcheck) | `not-applicable` | No `Dockerfile`. Plugin is consumed as a binary on developer/CI hosts via `go install`. Re-evaluate if we ever publish a `protoc-gen-sanitize` OCI image. |
 | Mobile (TYPE=6) and frontend (TYPE=3) tooling | `not-applicable` | Pure Go CLI. |
+| Local Development (`docker compose up`) | `not-applicable` | Build-time plugin invoked by `protoc`. No services, no DB, no cache to stand up. `make test` covers the entire local loop. |
+| Dependency Injection (constructor DI, Wire, Dig) | `not-applicable` | Single-binary plugin with one entrypoint (`main.go`) and one codegen module (`sanitizer.go`). No service graph to wire. |
+| Logging (`slog` JSON, structured fields) | `not-applicable` | Plugin runs synchronously inside `protoc` and exits. Diagnostics go to stderr via `protoc-gen-star` (`DEBUG_PG_SAN=1`). No log shipping. |
+| Testing & Architecture template (Red-Green-Refactor + edge I/O + interface-at-call-site) | `replaced-by:fixture-driven codegen tests` | Project is a code generator. Tests live in `tests/*.proto` fixtures + `tests/entity_test.go` asserting against the generated output. Standard service-DDD test layering doesn't fit. |
+| Project Layout template (`internal/` four-layer split) | `replaced-by:flat-cli-layout` | Plugin total ~3 Go files plus the `sanitize/` proto package. The template's `cmd/internal/domain/usecase/repository/delivery` split would be 100% empty directories. Actual layout documented in `## Repository structure` above. |
 
 Carve-outs are honored by `dev-update-project`, `dev-arch-review`, and other
 iagen-dev skills — they will not be re-suggested unless the user removes the row.
