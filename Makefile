@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 empty :=
 space := $(empty) $(empty)
 NAME := sanitize
