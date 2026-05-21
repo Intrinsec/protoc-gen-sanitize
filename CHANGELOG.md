@@ -7,6 +7,12 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Refreshed third-party dependencies and CI tool pins. Patched 0 known
+  vulnerabilities (the project remained at zero called vulnerabilities
+  throughout the refresh).
+
 ## [0.1.0] - 2026-05-20
 
 First tagged release following the iagen-dev onboarding pass.
