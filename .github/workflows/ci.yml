@@ -12,7 +12,7 @@ permissions:
 
 env:
   GO_VERSION: "1.26"
-  PROTOC_VERSION: "27.3"
+  PROTOC_VERSION: "35.0"
 
 jobs:
   setup-tools:
