@@ -9,9 +9,9 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Refreshed third-party dependencies and CI tool pins. Patched 0 known
-  vulnerabilities (the project remained at zero called vulnerabilities
-  throughout the refresh).
+- Refreshed third-party dependencies and CI tool pins. Called-vulnerability
+  count stayed at 0. Uncalled-CVE counts dropped further: imported packages
+  from 8 to 3, required modules from 6 to 5.
 
 ## [0.1.0] - 2026-05-20
 
