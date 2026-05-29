@@ -41,6 +41,7 @@ func (p *SanitizeModule) InitContext(c pgs.BuildContext) {
 		"package":           p.ctx.PackageName,
 		"name":              p.ctx.Name,
 		"sanitizer":         p.sanitizer,
+		"oneofSanitizer":    p.oneofSanitizer,
 		"initializer":       p.initializer,
 		"leadingCommenter":  p.leadingCommenter,
 		"isDisabledMessage": p.isDisabledMessage,
@@ -282,6 +283,78 @@ func (p *SanitizeModule) hasSanitizeMethod(m pgs.Message) bool {
 	return m.BuildTarget() && !p.fileDisabled(m.File())
 }
 
+// oneofSanitizer emits a type switch that dispatches sanitization to the active
+// member of a (real) oneof. protoc-gen-go represents oneof members as wrapper
+// structs (e.g. *Observable_Account) reached via m.Get<Oneof>(); they are not
+// direct fields on the parent message. Members may be messages (call Sanitize)
+// or strings with rules (sanitize in place on the wrapper). Members that are
+// disabled, ruleless strings, or types without a Sanitize() method (WKT/
+// external) contribute no case. An all-empty switch is omitted entirely.
+func (p *SanitizeModule) oneofSanitizer(o pgs.OneOf) string {
+	var cases []string
+
+	for _, f := range o.Fields() {
+		name := p.ctx.Name(f)
+
+		var disableField bool
+		if ok, err := f.Extension(sanitize.E_DisableField, &disableField); ok && err == nil && disableField {
+			continue
+		}
+
+		access := fmt.Sprintf("v.%s", name)
+		var body string
+
+		switch f.Type().ProtoType() {
+		case pgs.StringT:
+			var rules sanitize.FieldRules
+			ok, err := f.Extension(sanitize.E_Rules, &rules)
+			if err != nil {
+				p.Logf(
+					"%v:%d: Error can't retrieve rules extension for message %s with error: %s",
+					f.File().Name(),
+					f.SourceCodeInfo().Location().Span[0]+1,
+					f.FullyQualifiedName(),
+					err,
+				)
+				p.hasErrors = true
+				continue
+			}
+			if !ok {
+				continue
+			}
+			var kind string
+			switch rules.Kind {
+			case sanitize.Sanitization_HTML:
+				kind = "html"
+			case sanitize.Sanitization_TEXT:
+				kind = "text"
+			default:
+				continue
+			}
+			lines := []string{fmt.Sprintf("%s = %sSanitize.Sanitize(%s)", access, kind, access)}
+			if rules.GetTrim() {
+				lines = append(lines, fmt.Sprintf("%[1]s = strings.TrimSpace(%[1]s)", access))
+			}
+			body = strings.Join(lines, "\n")
+		case pgs.MessageT:
+			if !p.hasSanitizeMethod(embeddedMessage(f)) {
+				continue
+			}
+			body = fmt.Sprintf("if %[1]s != nil {\n%[1]s.Sanitize()\n}", access)
+		default:
+			continue
+		}
+
+		cases = append(cases, fmt.Sprintf("case *%s:\n%s", p.ctx.OneofOption(f), body))
+	}
+
+	if len(cases) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("switch v := m.Get%s().(type) {\n%s\n}", p.ctx.Name(o), strings.Join(cases, "\n"))
+}
+
 func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 	name := p.ctx.Name(f)
 
@@ -345,8 +418,11 @@ func (m *{{ name . }}) Sanitize() {
 
 	{{ initializer . }}
 
-{{ range .Fields }}
+{{ range .NonOneOfFields }}
     {{ sanitizer . }}
+{{ end }}
+{{ range .RealOneOfs }}
+    {{ oneofSanitizer . }}
 {{ end }}
 {{ end }}
 }
