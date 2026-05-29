@@ -1,10 +1,11 @@
 // Copyright 2021-2022 Intrinsec. All rights reserved.
 
+// Package main hosts the `protoc-gen-sanitize` plugin.
 package main
 
 import (
-	pgs "github.com/lyft/protoc-gen-star"
-	pgsgo "github.com/lyft/protoc-gen-star/lang/go"
+	pgs "github.com/lyft/protoc-gen-star/v2"
+	pgsgo "github.com/lyft/protoc-gen-star/v2/lang/go"
 )
 
 // version and commit are populated at build time by goreleaser via
@@ -24,7 +25,7 @@ func main() {
 	pgs.Init(pgs.DebugEnv("DEBUG_PG_SAN")).
 		RegisterModule(sanitizeModule).
 		RegisterPostProcessor(pgsgo.GoFmt()).
-		RegisterPostProcessor(GoImports()).
+		RegisterPostProcessor(pgsgo.GoImports()).
 		Render()
 	sanitizeModule.ExitCheck()
 }

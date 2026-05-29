@@ -11,4 +11,5 @@ package main
 
 import (
 	_ "github.com/microcosm-cc/bluemonday"
+	_ "google.golang.org/protobuf/types/known/timestamppb"
 )

@@ -1,0 +1,43 @@
+// Copyright Example 2026
+
+syntax = "proto3";
+
+package test;
+
+import "sanitize/sanitize.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./tests;test";
+
+message Account {
+    string name = 1 [
+        (sanitize.rules) = {
+            kind: TEXT,
+            trim: true
+        }
+    ];
+    string domain = 2;
+}
+
+message Host {
+    string name = 1 [
+        (sanitize.rules) = {
+            kind: TEXT,
+            trim: true
+        }
+    ];
+}
+
+message Observable {
+    oneof value {
+        Account account = 1;
+        Host host = 2;
+        string raw = 3 [
+            (sanitize.rules) = {
+                kind: TEXT,
+                trim: true
+            }
+        ];
+        google.protobuf.Timestamp seen_at = 4;
+    }
+}

@@ -7,8 +7,20 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed
+## [1.0.0] - 2026-05-29
 
+### Fixed
+- Generated `Sanitize()` now compiles for messages containing a `oneof`: oneof
+  members are reached through a type switch instead of as direct fields.
+- Generated `Sanitize()` no longer calls `.Sanitize()` on well-known-type fields
+  (e.g. `google.protobuf.Timestamp`) or other messages the plugin does not
+  generate a method for, which previously failed to compile.
+
+### Changed
+- **BREAKING:** The plugin is now built on `protoc-gen-star/v2`. This affects
+  only code that imports this repository as a Go library (the module's internal
+  framework changed); the `protoc-gen-sanitize` binary and its plugin options
+  are unchanged. Plugin users need no migration.
 - Refreshed third-party dependencies and CI tool pins. Called-vulnerability
   count stayed at 0. Uncalled-CVE counts dropped further: imported packages
   from 8 to 3, required modules from 6 to 5.
@@ -62,5 +74,6 @@ this entry summarizes the user-visible delta since `v0.0.15`.
 <!-- Internal-only changes (CI bootstrap, AGENTS.md, lint fixes, docs)
      intentionally omitted per Keep-a-Changelog wording rules. -->
 
-[Unreleased]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v0.0.15...v0.1.0

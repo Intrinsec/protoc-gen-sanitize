@@ -15,6 +15,10 @@ GO_IMPORT_SPACES := M$(NAME)/$(NAME).proto=${PACKAGE}/$(NAME),\
 	Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor
 GO_IMPORT:=$(subst $(space),,$(GO_IMPORT_SPACES))
 
+# protoc bundles the well-known types under <protoc>/../include. Fixtures that
+# import google/protobuf/*.proto need this on the include path.
+PROTOC_INCLUDE := $(shell dirname $(shell which protoc))/../include
+
 .PHONY: build
 build: bin/protoc-gen-$(NAME)
 
@@ -40,14 +44,28 @@ PROTO_FIXTURES := $(shell find tests -name '*.proto' 2>/dev/null)
 
 .PHONY: generate
 generate: bin/protoc-gen-go bin/protoc-gen-$(NAME)
-	@protoc -I . --plugin=protoc-gen-go=$(shell pwd)/bin/protoc-gen-go --go_out="." $(PROTO_FIXTURES)
-	@protoc -I . --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_out=. $(PROTO_FIXTURES)
+	@protoc -I . -I $(PROTOC_INCLUDE) --plugin=protoc-gen-go=$(shell pwd)/bin/protoc-gen-go --go_out="." $(PROTO_FIXTURES)
+	@protoc -I . -I $(PROTOC_INCLUDE) --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_out=. $(PROTO_FIXTURES)
 
 .PHONY: test
-test: generate
+test: generate test-source-relative
 	@cat tests/entity.pb.$(NAME).go
 	@cd tests && go test -mod=vendor -v -coverprofile=cover.out -covermode=atomic .
 	@go tool cover -func=tests/cover.out | tail -1
+
+.PHONY: test-source-relative
+test-source-relative: bin/protoc-gen-$(NAME)
+	@tmp=$$(mktemp -d); \
+	protoc -I . -I $(PROTOC_INCLUDE) \
+	  --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) \
+	  --$(NAME)_out=$$tmp --$(NAME)_opt=paths=source_relative tests/sub/entity_sub.proto; \
+	if [ -f $$tmp/tests/sub/entity_sub.pb.$(NAME).go ]; then \
+	  echo "source_relative OK: nested path tests/sub/ preserved"; \
+	  rm -rf $$tmp; \
+	else \
+	  echo "source_relative FAIL: expected tests/sub/entity_sub.pb.$(NAME).go under $$tmp"; \
+	  find $$tmp -type f; rm -rf $$tmp; exit 1; \
+	fi
 
 .PHONY: lint
 lint: generate
