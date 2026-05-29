@@ -48,10 +48,24 @@ generate: bin/protoc-gen-go bin/protoc-gen-$(NAME)
 	@protoc -I . -I $(PROTOC_INCLUDE) --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_out=. $(PROTO_FIXTURES)
 
 .PHONY: test
-test: generate
+test: generate test-source-relative
 	@cat tests/entity.pb.$(NAME).go
 	@cd tests && go test -mod=vendor -v -coverprofile=cover.out -covermode=atomic .
 	@go tool cover -func=tests/cover.out | tail -1
+
+.PHONY: test-source-relative
+test-source-relative: bin/protoc-gen-$(NAME)
+	@tmp=$$(mktemp -d); \
+	protoc -I . -I $(PROTOC_INCLUDE) \
+	  --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) \
+	  --$(NAME)_out=$$tmp --$(NAME)_opt=paths=source_relative tests/sub/entity_sub.proto; \
+	if [ -f $$tmp/tests/sub/entity_sub.pb.$(NAME).go ]; then \
+	  echo "source_relative OK: nested path tests/sub/ preserved"; \
+	  rm -rf $$tmp; \
+	else \
+	  echo "source_relative FAIL: expected tests/sub/entity_sub.pb.$(NAME).go under $$tmp"; \
+	  find $$tmp -type f; rm -rf $$tmp; exit 1; \
+	fi
 
 .PHONY: lint
 lint: generate
