@@ -1,0 +1,13 @@
+// Copyright Example 2026
+
+syntax = "proto3";
+
+package test;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./tests;test";
+
+message Event {
+    google.protobuf.Timestamp detection_time = 1;
+}

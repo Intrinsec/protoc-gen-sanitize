@@ -253,6 +253,35 @@ func (p *SanitizeModule) checkNoSanitize(f pgs.Field) string {
 	return ""
 }
 
+// embeddedMessage returns the message a field embeds — the element message for
+// repeated fields, the message itself for singular embeds — or nil if the field
+// is not a message (or is a map value).
+func embeddedMessage(f pgs.Field) pgs.Message {
+	ft := f.Type()
+	if ft.IsRepeated() {
+		return ft.Element().Embed()
+	}
+	return ft.Embed()
+}
+
+// fileDisabled reports whether a file carries the sanitize.disable_file option.
+func (p *SanitizeModule) fileDisabled(f pgs.File) bool {
+	var disable bool
+	ok, err := f.Extension(sanitize.E_DisableFile, &disable)
+	return ok && err == nil && disable
+}
+
+// hasSanitizeMethod reports whether this plugin emits a Sanitize() method for m.
+// A method is emitted only for build-target messages whose file is not
+// disable_file'd. Well-known types and other external messages are never build
+// targets, so .Sanitize() must not be called on them.
+func (p *SanitizeModule) hasSanitizeMethod(m pgs.Message) bool {
+	if m == nil {
+		return false
+	}
+	return m.BuildTarget() && !p.fileDisabled(m.File())
+}
+
 func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 	name := p.ctx.Name(f)
 
@@ -287,6 +316,9 @@ func (p *SanitizeModule) sanitizer(f pgs.Field) string {
 		}
 
 	case pgs.MessageT:
+		if !p.hasSanitizeMethod(embeddedMessage(f)) {
+			return ""
+		}
 		return p.buildSanitizeCall(f, string(name), "", false)
 	}
 	return ""

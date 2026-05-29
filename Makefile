@@ -15,6 +15,10 @@ GO_IMPORT_SPACES := M$(NAME)/$(NAME).proto=${PACKAGE}/$(NAME),\
 	Mgoogle/protobuf/descriptor.proto=github.com/golang/protobuf/protoc-gen-go/descriptor
 GO_IMPORT:=$(subst $(space),,$(GO_IMPORT_SPACES))
 
+# protoc bundles the well-known types under <protoc>/../include. Fixtures that
+# import google/protobuf/*.proto need this on the include path.
+PROTOC_INCLUDE := $(shell dirname $(shell which protoc))/../include
+
 .PHONY: build
 build: bin/protoc-gen-$(NAME)
 
@@ -40,8 +44,8 @@ PROTO_FIXTURES := $(shell find tests -name '*.proto' 2>/dev/null)
 
 .PHONY: generate
 generate: bin/protoc-gen-go bin/protoc-gen-$(NAME)
-	@protoc -I . --plugin=protoc-gen-go=$(shell pwd)/bin/protoc-gen-go --go_out="." $(PROTO_FIXTURES)
-	@protoc -I . --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_out=. $(PROTO_FIXTURES)
+	@protoc -I . -I $(PROTOC_INCLUDE) --plugin=protoc-gen-go=$(shell pwd)/bin/protoc-gen-go --go_out="." $(PROTO_FIXTURES)
+	@protoc -I . -I $(PROTOC_INCLUDE) --plugin=protoc-gen-$(NAME)=$(shell pwd)/bin/protoc-gen-$(NAME) --$(NAME)_out=. $(PROTO_FIXTURES)
 
 .PHONY: test
 test: generate
