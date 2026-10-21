@@ -7,6 +7,8 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-21
+
 ### Changed
 - **BREAKING:** Building the plugin from source now requires Go 1.27.3 or
   newer (previously 1.25). Prebuilt release binaries are unaffected.
@@ -81,6 +83,7 @@ this entry summarizes the user-visible delta since `v0.0.15`.
 <!-- Internal-only changes (CI bootstrap, AGENTS.md, lint fixes, docs)
      intentionally omitted per Keep-a-Changelog wording rules. -->
 
-[Unreleased]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v0.1.0...v1.0.0
 [0.1.0]: https://github.com/Intrinsec/protoc-gen-sanitize/compare/v0.0.15...v0.1.0
