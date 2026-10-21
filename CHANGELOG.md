@@ -7,6 +7,13 @@ and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING:** Building the plugin from source now requires Go 1.27.3 or
+  newer (previously 1.25). Prebuilt release binaries are unaffected.
+- Refreshed third-party dependencies and build tooling. All known
+  vulnerabilities previously reported in dependencies are resolved (none were
+  reachable from the plugin).
+
 ## [1.0.0] - 2026-05-29
 
 ### Fixed

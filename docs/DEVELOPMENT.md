@@ -2,20 +2,21 @@
 
 ## Prerequisites
 
-- Go ≥ 1.22 (module floor 1.18).
+- Go `1.27.3` — pinned by the `go` directive in `go.mod` and by `GO_VERSION`
+  in `.github/workflows/ci.yml`. Bump both together.
 - `protoc` (Protocol Buffers compiler).
   - Ubuntu: `sudo apt install protobuf-compiler`
   - macOS: `brew install protobuf`
-- `golangci-lint` ≥ v2 — install via `/lint-go-install` or
-  `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest`.
-- `govulncheck` — install via `/govulncheck-install` or
-  `go install golang.org/x/vuln/cmd/govulncheck@latest`.
+- `golangci-lint`, `govulncheck`, `go-licenses` — pinned in the `Makefile`
+  (`GOLANGCI_LINT_VERSION`, `GOVULNCHECK_VERSION`, `GO_LICENSES_VERSION`) and
+  mirrored in the CI `env:` block. `make tools` installs them into `bin/`;
+  `make tools-release` installs `goreleaser` (`GORELEASER_VERSION`).
+  `go-licenses` must be built with the same Go version as the project, or
+  `license-check` fails on stdlib packages ("does not have module info").
 - `gitleaks` — `sudo apt install gitleaks` or
   `curl -sSfL https://raw.githubusercontent.com/gitleaks/gitleaks/master/install.sh | sh`.
 - `syft` (for SBOM) —
   `curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b ~/.local/bin`.
-- `go-licenses` (for license-check) —
-  `go install github.com/google/go-licenses@latest`.
 - `pre-commit` (optional, recommended) — `pipx install pre-commit`.
 
 ## First-time setup
