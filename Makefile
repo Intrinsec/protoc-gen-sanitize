@@ -5,6 +5,15 @@ space := $(empty) $(empty)
 NAME := sanitize
 PACKAGE := github.com/intrinsec/protoc-gen-$(NAME)
 
+# Pinned tool versions (Go itself is pinned by the `go` directive in go.mod).
+# Keep in sync with the `env:` block of .github/workflows/ci.yml.
+GOLANGCI_LINT_VERSION := v2.15.0
+GOVULNCHECK_VERSION := v1.9.0
+GO_LICENSES_VERSION := v2.0.1
+GORELEASER_VERSION := v2.18.3
+# protoc-gen-go follows the google.golang.org/protobuf version in go.mod.
+PROTOC_GEN_GO_VERSION := $(shell go list -m -f '{{.Version}}' google.golang.org/protobuf)
+
 # protoc-gen-go parameters for properly generating the import path for PGV
 GO_IMPORT_SPACES := M$(NAME)/$(NAME).proto=${PACKAGE}/$(NAME),\
 	Mgoogle/protobuf/any.proto=github.com/golang/protobuf/ptypes/any,\
@@ -34,7 +43,7 @@ $(NAME)/$(NAME).pb.go: bin/protoc-gen-go $(NAME)/$(NAME).proto
 		--go_out="${GO_IMPORT}:." $(NAME).proto
 
 bin/protoc-gen-go:
-	@GOBIN=$(shell pwd)/bin go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	@GOBIN=$(shell pwd)/bin go install google.golang.org/protobuf/cmd/protoc-gen-go@$(PROTOC_GEN_GO_VERSION)
 
 
 bin/protoc-gen-$(NAME): $(NAME)/$(NAME).pb.go $(wildcard *.go)
@@ -66,6 +75,16 @@ test-source-relative: bin/protoc-gen-$(NAME)
 	  echo "source_relative FAIL: expected tests/sub/entity_sub.pb.$(NAME).go under $$tmp"; \
 	  find $$tmp -type f; rm -rf $$tmp; exit 1; \
 	fi
+
+.PHONY: tools
+tools:
+	@GOBIN=$(shell pwd)/bin go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
+	@GOBIN=$(shell pwd)/bin go install golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION)
+	@GOBIN=$(shell pwd)/bin go install github.com/google/go-licenses/v2@$(GO_LICENSES_VERSION)
+
+.PHONY: tools-release
+tools-release:
+	@GOBIN=$(shell pwd)/bin go install github.com/goreleaser/goreleaser/v2@$(GORELEASER_VERSION)
 
 .PHONY: lint
 lint: generate
@@ -100,4 +119,4 @@ clean:
 
 .PHONY: distclean
 distclean: clean
-	@rm -fv bin/protoc-gen-go bin/protoc-gen-$(NAME) $(NAME)/$(NAME).pb.go
+	@rm -fv bin/protoc-gen-go bin/protoc-gen-$(NAME) bin/golangci-lint bin/govulncheck bin/go-licenses bin/goreleaser $(NAME)/$(NAME).pb.go

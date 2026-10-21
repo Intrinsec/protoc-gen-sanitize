@@ -7,7 +7,7 @@ Project tier and type drive every rule below.
 | TIER | B — shared non-critical (developer build tool, no SLA, used across Intrinsec Go projects) |
 | TYPE | 2 — Go CLI (protoc plugin invoked at build time) |
 | API_STYLE | n/a (codegen plugin, not an API server) |
-| Go version | 1.18 (declared in `go.mod`) |
+| Go version | 1.27.3 (pinned in `go.mod` and CI `GO_VERSION`) |
 | Module path | `github.com/intrinsec/protoc-gen-sanitize` |
 
 ## Purpose
@@ -38,7 +38,7 @@ User-facing strings + UI copy exempt — match audience language.
 
 **Project specifics:**
 
-- Go 1.18 minimum (raise floor to current stable when bumping deps).
+- Go pinned to 1.27.3 (raise alongside upstream stable when bumping deps).
 - Avoid runtime reflection where compile-time type checking is possible.
 - Generated test files (`tests/*.pb.go`, `tests/*.pb.sanitize.go`) must be
   produced by `make test` (or the CI codegen step) **before** running
@@ -190,11 +190,11 @@ CHANGELOG entry — but if in doubt, log under `Changed`.
 
 Required on developer machine and in CI:
 
-- `go` ≥ 1.22 (build), 1.18 module floor.
+- `go` 1.27.3 (pinned in `go.mod` + CI `GO_VERSION`).
 - `protoc` (binary) — codegen.
 - `protoc-gen-go` (vendored via `make bin/protoc-gen-go`).
-- `golangci-lint` ≥ v2 — installed via `/lint-go-install`.
-- `govulncheck` — installed via `/govulncheck-install`.
+- `golangci-lint`, `govulncheck`, `go-licenses`, `goreleaser` — exact versions
+  pinned in the `Makefile` and CI `env:`; `make tools` / `make tools-release`.
 
 ## Linting
 
